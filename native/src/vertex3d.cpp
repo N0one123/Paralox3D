@@ -1,34 +1,36 @@
 #include "vertex3d.h"
+#include "renderer.h"
 
 #include <cstdint>
+#include <memory>
 #include <vector>
 
-struct Transform {
-    float x = 0.0f;
-    float y = 0.0f;
-    float z = 0.0f;
-};
+struct Transform { float x=0.0f, y=0.0f, z=0.0f; };
 
 struct V3DEngine {
-    int width;
-    int height;
+    int width=1280, height=720;
     std::vector<Transform> transforms;
-    bool running = true;
+    std::unique_ptr<Renderer> renderer;
+    bool running=false;
 };
 
 extern "C" {
 
-V3DEngine* v3d_engine_create(int width, int height, const char*) {
+V3DEngine* v3d_engine_create(int width, int height, const char* title) {
     auto* engine = new V3DEngine{};
     engine->width = width;
     engine->height = height;
     engine->transforms.reserve(1024);
+    engine->renderer.reset(create_platform_renderer());
+    if (!engine->renderer || !engine->renderer->create(width, height, title)) {
+        delete engine;
+        return nullptr;
+    }
+    engine->running = true;
     return engine;
 }
 
-void v3d_engine_destroy(V3DEngine* engine) {
-    delete engine;
-}
+void v3d_engine_destroy(V3DEngine* engine) { delete engine; }
 
 uint32_t v3d_entity_create(V3DEngine* engine) {
     if (!engine) return 0;
@@ -36,29 +38,24 @@ uint32_t v3d_entity_create(V3DEngine* engine) {
     return static_cast<uint32_t>(engine->transforms.size());
 }
 
-void v3d_entity_set_position(
-    V3DEngine* engine,
-    uint32_t entity,
-    float x,
-    float y,
-    float z
-) {
+void v3d_entity_set_position(V3DEngine* engine, uint32_t entity,
+                             float x, float y, float z) {
     if (!engine || entity == 0 || entity > engine->transforms.size()) return;
     auto& t = engine->transforms[entity - 1];
-    t.x = x;
-    t.y = y;
-    t.z = z;
+    t.x=x; t.y=y; t.z=z;
 }
 
 int v3d_engine_step(V3DEngine* engine) {
-    if (!engine || !engine->running) return 0;
-
-    /*
-     * Windowing, input and renderer backends will plug into this boundary.
-     * The simulation loop remains native so Python does not become the
-     * per-frame bottleneck.
-     */
-    return 0;
+    if (!engine || !engine->running || !engine->renderer) return 0;
+    if (!engine->renderer->begin_frame()) {
+        engine->running = false;
+        return 0;
+    }
+    for (const auto& t : engine->transforms)
+        engine->renderer->draw_cube(t.x, t.y, t.z);
+    engine->renderer->end_frame();
+    engine->running = engine->renderer->running();
+    return engine->running ? 1 : 0;
 }
 
 }
