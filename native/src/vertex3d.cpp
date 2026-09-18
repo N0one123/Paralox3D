@@ -1,8 +1,7 @@
 #include "vertex3d.h"
 
-#include <vector>
 #include <cstdint>
-#include <memory>
+#include <vector>
 
 struct Transform {
     float x = 0.0f;
@@ -55,9 +54,9 @@ int v3d_engine_step(V3DEngine* engine) {
     if (!engine || !engine->running) return 0;
 
     /*
-     * Renderer/window/input backends will plug into this boundary.
-     * Keeping the simulation step native from day one lets us add rendering
-     * without redesigning the Python API.
+     * Windowing, input and renderer backends will plug into this boundary.
+     * The simulation loop remains native so Python does not become the
+     * per-frame bottleneck.
      */
     return 0;
 }
