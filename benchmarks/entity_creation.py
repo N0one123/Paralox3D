@@ -5,7 +5,7 @@ rendering. Rendering benchmarks will be added once the first GPU backend lands.
 """
 
 from time import perf_counter
-from vertex3d import Engine
+from paralox3d import Engine
 
 
 COUNT = 100_000
