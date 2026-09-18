@@ -1,6 +1,6 @@
 from vertex3d import Engine, Entity
 
-engine = Engine(title="Vertex3D Hello", width=1280, height=720)
+engine = Engine(title="Paralox3D Hello", width=1280, height=720)
 
 cube = Entity(
     engine,
