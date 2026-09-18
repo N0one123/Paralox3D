@@ -7,14 +7,15 @@ set(CMAKE_POSITION_INDEPENDENT_CODE ON)
 
 add_library(paralox3d SHARED
     native/src/vertex3d.cpp
+    native/src/renderer.cpp
 )
 
-target_include_directories(paralox3d
-    PUBLIC
-        native/include
-)
-
+target_include_directories(paralox3d PUBLIC native/include)
 target_compile_definitions(paralox3d PRIVATE V3D_BUILD)
+
+if(WIN32)
+    target_link_libraries(paralox3d PRIVATE opengl32 user32 gdi32)
+endif()
 
 if(MSVC)
     target_compile_options(paralox3d PRIVATE /O2)
