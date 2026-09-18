@@ -1,4 +1,4 @@
-"""Vertex3D public Python API."""
+"""Paralox3D public Python API."""
 
 from .engine import Engine
 from .entity import Entity
