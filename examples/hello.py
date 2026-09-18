@@ -1,11 +1,8 @@
-from paralox3d import Engine, Entity
+from paralox3d import *
 
-engine = Engine(title="Paralox3D Hello", width=1280, height=720)
+cube=Object("cube",position=(0,0,-5))
 
-cube = Entity(
-    engine,
-    model="cube",
-    position=(0.0, 0.0, 5.0),
-)
+def update(dt):
+    cube.x += 0.5 * dt
 
-engine.run()
+start()
