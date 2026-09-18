@@ -1,4 +1,4 @@
-"""Low-level loader for the Vertex3D native core.
+"""Low-level loader for the Paralox3D native core.
 
 The public engine API intentionally keeps native loading in one place so the
 rest of the Python package does not care whether the core is a .dll, .so, or
@@ -15,16 +15,16 @@ from pathlib import Path
 
 def _library_names():
     if sys.platform == "win32":
-        return ["vertex3d.dll"]
+        return ["paralox3d.dll"]
     if sys.platform == "darwin":
-        return ["libvertex3d.dylib"]
-    return ["libvertex3d.so"]
+        return ["libparalox3d.dylib"]
+    return ["libparalox3d.so"]
 
 
 def load():
     candidates = []
 
-    env = os.environ.get("VERTEX3D_NATIVE")
+    env = os.environ.get("PARALOX3D_NATIVE")
     if env:
         candidates.append(Path(env))
 
@@ -41,6 +41,6 @@ def load():
             return ctypes.CDLL(str(path))
 
     raise RuntimeError(
-        "Vertex3D native core was not found. Build the native project first "
-        "and/or set VERTEX3D_NATIVE to the library path."
+        "Paralox3D native core was not found. Build the native project first "
+        "and/or set PARALOX3D_NATIVE to the library path."
     )
