@@ -1,4 +1,4 @@
-# Vertex3D
+# Paralox3D
 
 A performance-first Python 3D engine designed from the ground up for desktop and mobile.
 
@@ -17,7 +17,7 @@ A performance-first Python 3D engine designed from the ground up for desktop and
 Python game code
       │
       ▼
-Vertex3D Python API
+Paralox3D Python API
       │
       ▼
 C ABI boundary
