@@ -1,4 +1,4 @@
-from vertex3d import Engine, Entity
+from paralox3d import Engine, Entity
 
 engine = Engine(title="Paralox3D Hello", width=1280, height=720)
 
