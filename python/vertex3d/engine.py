@@ -1,12 +1,14 @@
-"""Vertex3D engine entry point."""
+"""Paralox3D engine entry point."""
 
 from __future__ import annotations
+
+import ctypes
 
 from .native import load
 
 
 class Engine:
-    def __init__(self, title="Vertex3D", width=1280, height=720):
+    def __init__(self, title="Paralox3D", width=1280, height=720):
         self.title = title
         self.width = width
         self.height = height
@@ -16,33 +18,31 @@ class Engine:
             width, height, title.encode("utf-8")
         )
         if not self._engine:
-            raise RuntimeError("Vertex3D native engine creation failed.")
+            raise RuntimeError("Paralox3D native engine creation failed.")
 
     def _configure_abi(self):
         self._native.v3d_engine_create.argtypes = [
-            __import__("ctypes").c_int,
-            __import__("ctypes").c_int,
-            __import__("ctypes").c_char_p,
+            ctypes.c_int, ctypes.c_int, ctypes.c_char_p
         ]
-        self._native.v3d_engine_create.restype = __import__("ctypes").c_void_p
+        self._native.v3d_engine_create.restype = ctypes.c_void_p
 
-        self._native.v3d_engine_destroy.argtypes = [__import__("ctypes").c_void_p]
+        self._native.v3d_engine_destroy.argtypes = [ctypes.c_void_p]
         self._native.v3d_engine_destroy.restype = None
 
-        self._native.v3d_entity_create.argtypes = [__import__("ctypes").c_void_p]
-        self._native.v3d_entity_create.restype = __import__("ctypes").c_uint32
+        self._native.v3d_entity_create.argtypes = [ctypes.c_void_p]
+        self._native.v3d_entity_create.restype = ctypes.c_uint32
 
         self._native.v3d_entity_set_position.argtypes = [
-            __import__("ctypes").c_void_p,
-            __import__("ctypes").c_uint32,
-            __import__("ctypes").c_float,
-            __import__("ctypes").c_float,
-            __import__("ctypes").c_float,
+            ctypes.c_void_p,
+            ctypes.c_uint32,
+            ctypes.c_float,
+            ctypes.c_float,
+            ctypes.c_float,
         ]
         self._native.v3d_entity_set_position.restype = None
 
-        self._native.v3d_engine_step.argtypes = [__import__("ctypes").c_void_p]
-        self._native.v3d_engine_step.restype = None
+        self._native.v3d_engine_step.argtypes = [ctypes.c_void_p]
+        self._native.v3d_engine_step.restype = ctypes.c_int
 
     def _create_entity(self):
         return self._native.v3d_entity_create(self._engine)
@@ -53,7 +53,7 @@ class Engine:
         )
 
     def run(self):
-        while self._native.v3d_engine_step(self._engine) != 0:
+        while self._native.v3d_engine_step(self._engine):
             pass
 
     def close(self):
