@@ -12,6 +12,7 @@ NATIVE = ROOT / "native"
 SRC = [NATIVE / "src" / "paralox3d.cpp", NATIVE / "src" / "renderer.cpp"]
 INCLUDE = NATIVE / "include"
 OUT = ROOT / "python" / "paralox3d" / "_native"
+TOOLS = ROOT / "tools" / "mingw64" / "bin"
 
 
 def _which(*names: str) -> str | None:
@@ -22,6 +23,28 @@ def _which(*names: str) -> str | None:
     return None
 
 
+def _portable_compiler(*names: str) -> str | None:
+    for name in names:
+        path = TOOLS / name
+        if path.is_file():
+            return str(path)
+    return None
+
+
+def _find_windows_cxx() -> str | None:
+    # Prefer a compiler bundled with the source checkout so no system
+    # installation or PATH modification is required.
+    cxx = _portable_compiler("g++.exe", "clang++.exe")
+    if cxx:
+        return cxx
+
+    cxx = _which("cl")
+    if cxx:
+        return cxx
+
+    return _which("g++", "clang++")
+
+
 def _build_windows() -> Path:
     cxx = _which("cl")
     if cxx:
@@ -29,16 +52,17 @@ def _build_windows() -> Path:
         cmd = [
             cxx, "/nologo", "/std:c++17", "/O2", "/EHsc", "/LD",
             f"/I{INCLUDE}", "/DP3D_BUILD", *map(str, SRC),
-            f"/link", f"/OUT:{out}", "opengl32.lib", "user32.lib", "gdi32.lib",
+            "/link", f"/OUT:{out}", "opengl32.lib", "user32.lib", "gdi32.lib",
         ]
         subprocess.check_call(cmd)
         return out
 
-    cxx = _which("g++", "clang++")
+    cxx = _find_windows_cxx()
     if not cxx:
         raise RuntimeError(
-            "No C++ compiler was found. Install Visual Studio Build Tools "
-            "(MSVC) or make g++/clang++ available on PATH."
+            "No C++ compiler was found. Put a portable MinGW-w64 compiler in "
+            "tools\\mingw64\\bin, install Visual Studio Build Tools (MSVC), "
+            "or make g++/clang++ available on PATH."
         )
 
     out = OUT / "paralox3d.dll"
