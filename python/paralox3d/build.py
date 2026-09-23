@@ -47,7 +47,11 @@ def _find_windows_cxx() -> str | None:
 
 def _copy_mingw_runtime() -> None:
     """Copy MinGW runtime DLLs needed by the native core beside it."""
-    for name in ("libstdc++-6.dll", "libgcc_s_seh-1.dll"):
+    for name in (
+        "libstdc++-6.dll",
+        "libgcc_s_seh-1.dll",
+        "libwinpthread-1.dll",
+    ):
         source = TOOLS / name
         if source.is_file():
             shutil.copy2(source, OUT / name)
