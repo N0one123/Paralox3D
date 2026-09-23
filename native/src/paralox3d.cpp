@@ -45,6 +45,11 @@ void p3d_entity_set_position(P3DEngine* engine, uint32_t entity,
     t.x=x; t.y=y; t.z=z;
 }
 
+int p3d_input_key_held(P3DEngine* engine, int key_code) {
+    if (!engine || !engine->renderer) return 0;
+    return engine->renderer->key_held(key_code) ? 1 : 0;
+}
+
 void p3d_engine_set_developer_overlay(P3DEngine* engine, int enabled, int object_count,
                                       float fps, const char* current_task, int warning_count) {
     if (!engine || !engine->renderer) return;
