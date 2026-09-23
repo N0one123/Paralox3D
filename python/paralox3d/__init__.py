@@ -5,4 +5,5 @@ from .math import Vec3
 from .scene import Scene,current_scene
 from .components import Component,Script
 from .input import key,pressed
-__all__=["Engine","start","Object","Entity","Vec3","Scene","current_scene","Component","Script","key","pressed"]
+from .modes import modes
+__all__=["Engine","start","Object","Entity","Vec3","Scene","current_scene","Component","Script","key","pressed","modes"]
