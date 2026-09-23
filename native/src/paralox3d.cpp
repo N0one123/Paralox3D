@@ -45,6 +45,18 @@ void p3d_entity_set_position(P3DEngine* engine, uint32_t entity,
     t.x=x; t.y=y; t.z=z;
 }
 
+void p3d_engine_set_developer_overlay(P3DEngine* engine, int enabled, int object_count,
+                                      float fps, const char* current_task, int warning_count) {
+    if (!engine || !engine->renderer) return;
+    engine->renderer->set_developer_overlay(
+        enabled != 0, object_count, fps, current_task, warning_count);
+}
+
+int p3d_engine_diagnostics_clicked(P3DEngine* engine) {
+    if (!engine || !engine->renderer) return 0;
+    return engine->renderer->diagnostics_clicked() ? 1 : 0;
+}
+
 int p3d_engine_step(P3DEngine* engine) {
     if (!engine || !engine->running || !engine->renderer) return 0;
     if (!engine->renderer->begin_frame()) {
