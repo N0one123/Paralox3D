@@ -4,6 +4,9 @@
 #include <windows.h>
 #include <GL/gl.h>
 #include <cmath>
+#include <cstdio>
+#include <cstring>
+#include <string>
 
 class Win32OpenGLRenderer final : public Renderer {
 public:
