@@ -3,6 +3,7 @@
 import ctypes
 import inspect
 import time
+from .clock import _set_dt
 from .input import _default_input
 from .native import load
 from .modes import modes
@@ -45,16 +46,17 @@ class Engine:
     def register(self,obj):
         if obj not in self._objects: self._objects.append(obj)
         return obj
-    def update(self,dt):
-        if self._update_callback: self._update_callback(dt)
-        for obj in tuple(self._objects): obj._update_components(dt)
+    def update(self):
+        if self._update_callback: self._update_callback()
+        for obj in tuple(self._objects): obj._update_components()
     def start(self,update=None):
         if update is not None: self._update_callback=update
         self._running=True; previous=time.perf_counter(); fps=0.0
         while self._running and self._native.p3d_engine_step(self._engine):
-            now=time.perf_counter(); dt=now-previous; previous=now
-            if dt > 0:
-                instant_fps = 1.0 / dt
+            now=time.perf_counter(); frame_dt=now-previous; previous=now
+            _set_dt(frame_dt)
+            if frame_dt > 0:
+                instant_fps = 1.0 / frame_dt
                 fps = instant_fps if fps == 0.0 else fps * 0.9 + instant_fps * 0.1
             self._native.p3d_engine_set_developer_overlay(
                 self._engine,
@@ -65,10 +67,10 @@ class Engine:
                 0,
             )
             _default_input._sync(lambda key_code: self._native.p3d_input_key_held(self._engine, key_code))
-            self.update(dt); _default_input._end_frame()
+            self.update(); _default_input._end_frame()
             if self.max_fps:
                 target=1.0/self.max_fps
-                if dt<target: time.sleep(target-dt)
+                if frame_dt<target: time.sleep(target-frame_dt)
     def run(self): self.start()
     def close(self):
         global _default_engine

@@ -32,8 +32,6 @@ def _portable_compiler(*names: str) -> str | None:
 
 
 def _find_windows_cxx() -> str | None:
-    # Prefer a compiler bundled with the source checkout so no system
-    # installation or PATH modification is required.
     cxx = _portable_compiler("g++.exe", "clang++.exe")
     if cxx:
         return cxx
@@ -45,8 +43,20 @@ def _find_windows_cxx() -> str | None:
     return _which("g++", "clang++")
 
 
+def _progress(percent: int, label: str) -> None:
+    width = 32
+    filled = round(width * percent / 100)
+    bar = "#" * filled + "-" * (width - filled)
+    print(f"\r[{bar}] {percent:3d}%  {label:<34}", end="", flush=True)
+
+
+def _finish_progress() -> None:
+    print()
+
+
 def _copy_mingw_runtime() -> None:
     """Copy MinGW runtime DLLs needed by the native core beside it."""
+    _progress(90, "Bundling MinGW runtime libraries")
     for name in (
         "libstdc++-6.dll",
         "libgcc_s_seh-1.dll",
@@ -57,33 +67,46 @@ def _copy_mingw_runtime() -> None:
             shutil.copy2(source, OUT / name)
 
 
+def _run_compile(cmd: list[str], label: str) -> None:
+    _progress(25, label)
+    try:
+        subprocess.check_call(cmd)
+    except subprocess.CalledProcessError:
+        _finish_progress()
+        raise
+    _progress(75, "Native C++ compilation complete")
+
+
 def _build_windows() -> Path:
-    cxx = _which("cl")
-    if cxx:
-        out = OUT / "paralox3d.dll"
+    cxx = _find_windows_cxx()
+    if not cxx:
+        raise RuntimeError(
+            "No C++ compiler was found. Put a portable MinGW-w64 compiler in "
+            "tools\\\\mingw64\\\\bin, install Visual Studio Build Tools (MSVC), "
+            "or make g++/clang++ available on PATH."
+        )
+
+    out = OUT / "paralox3d.dll"
+    _progress(5, f"Found compiler: {Path(cxx).name}")
+
+    if Path(cxx).name.lower() == "cl.exe":
         cmd = [
             cxx, "/nologo", "/std:c++17", "/O2", "/EHsc", "/LD",
             f"/I{INCLUDE}", "/DP3D_BUILD", *map(str, SRC),
             "/link", f"/OUT:{out}", "opengl32.lib", "user32.lib", "gdi32.lib",
         ]
-        subprocess.check_call(cmd)
-        return out
+        _run_compile(cmd, "Compiling native C++ core")
+    else:
+        cmd = [
+            cxx, "-std=c++17", "-O2", "-shared", "-DP3D_BUILD",
+            f"-I{INCLUDE}", *map(str, SRC), "-o", str(out),
+            "-lopengl32", "-luser32", "-lgdi32",
+        ]
+        _run_compile(cmd, "Compiling native C++ core")
 
-    cxx = _find_windows_cxx()
-    if not cxx:
-        raise RuntimeError(
-            "No C++ compiler was found. Put a portable MinGW-w64 compiler in "
-            "tools\\mingw64\\bin, install Visual Studio Build Tools (MSVC), "
-            "or make g++/clang++ available on PATH."
-        )
-
-    out = OUT / "paralox3d.dll"
-    subprocess.check_call([
-        cxx, "-std=c++17", "-O2", "-shared", "-DP3D_BUILD",
-        f"-I{INCLUDE}", *map(str, SRC), "-o", str(out),
-        "-lopengl32", "-luser32", "-lgdi32",
-    ])
     _copy_mingw_runtime()
+    _progress(100, "Build complete")
+    _finish_progress()
     return out
 
 
@@ -94,10 +117,13 @@ def _build_unix() -> Path:
 
     suffix = ".dylib" if sys.platform == "darwin" else ".so"
     out = OUT / f"libparalox3d{suffix}"
-    subprocess.check_call([
+    _progress(5, f"Found compiler: {Path(cxx).name}")
+    _run_compile([
         cxx, "-std=c++17", "-O2", "-fPIC", "-shared", "-DP3D_BUILD",
         f"-I{INCLUDE}", *map(str, SRC), "-o", str(out),
-    ])
+    ], "Compiling native C++ core")
+    _progress(100, "Build complete")
+    _finish_progress()
     return out
 
 

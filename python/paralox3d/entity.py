@@ -46,8 +46,8 @@ class Object:
         self.position=(self.x+x,self.y+y,self.z+z); return self
     def add(self,component):
         component.owner=self; self._components.append(component); component.on_start(); return component
-    def _update_components(self,dt):
-        for component in self._components: component.update(dt)
+    def _update_components(self):
+        for component in self._components: component.update()
     def _serialize(self):
         return {"name":self.name,"model":self.model,"position":list(self.position),"rotation":list(self.rotation),"scale":list(self.scale)}
 
