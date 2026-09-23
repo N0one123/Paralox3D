@@ -4,7 +4,7 @@ from __future__ import annotations
 
 
 _KEY_CODES = {
-    **{chr(code): code for code in range(ord("a"), ord("z") + 1)},
+    **{chr(code).lower(): code for code in range(ord("A"), ord("Z") + 1)},
     **{str(code): 0x30 + code for code in range(10)},
     "space": 0x20,
     "enter": 0x0D,
