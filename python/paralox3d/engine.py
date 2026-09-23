@@ -30,6 +30,8 @@ class Engine:
         self._native.p3d_entity_create.argtypes=[ctypes.c_void_p]; self._native.p3d_entity_create.restype=ctypes.c_uint32
         self._native.p3d_entity_set_position.argtypes=[ctypes.c_void_p,ctypes.c_uint32,ctypes.c_float,ctypes.c_float,ctypes.c_float]
         self._native.p3d_entity_set_position.restype=None
+        self._native.p3d_input_key_held.argtypes=[ctypes.c_void_p,ctypes.c_int]
+        self._native.p3d_input_key_held.restype=ctypes.c_int
         self._native.p3d_engine_step.argtypes=[ctypes.c_void_p]; self._native.p3d_engine_step.restype=ctypes.c_int
         self._native.p3d_engine_set_developer_overlay.argtypes=[
             ctypes.c_void_p, ctypes.c_int, ctypes.c_int, ctypes.c_float,
@@ -62,6 +64,7 @@ class Engine:
                 b"Running game loop",
                 0,
             )
+            _default_input._sync(lambda key_code: self._native.p3d_input_key_held(self._engine, key_code))
             self.update(dt); _default_input._end_frame()
             if self.max_fps:
                 target=1.0/self.max_fps
