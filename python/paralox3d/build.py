@@ -45,6 +45,14 @@ def _find_windows_cxx() -> str | None:
     return _which("g++", "clang++")
 
 
+def _copy_mingw_runtime() -> None:
+    """Copy MinGW runtime DLLs needed by the native core beside it."""
+    for name in ("libstdc++-6.dll", "libgcc_s_seh-1.dll"):
+        source = TOOLS / name
+        if source.is_file():
+            shutil.copy2(source, OUT / name)
+
+
 def _build_windows() -> Path:
     cxx = _which("cl")
     if cxx:
@@ -71,6 +79,7 @@ def _build_windows() -> Path:
         f"-I{INCLUDE}", *map(str, SRC), "-o", str(out),
         "-lopengl32", "-luser32", "-lgdi32",
     ])
+    _copy_mingw_runtime()
     return out
 
 
