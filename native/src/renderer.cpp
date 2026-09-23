@@ -112,6 +112,11 @@ public:
 
     bool running() const override { return running_; }
 
+    bool key_held(int key_code) const override {
+        if (key_code < 0 || key_code > 255) return false;
+        return (GetAsyncKeyState(key_code) & 0x8000) != 0;
+    }
+
     void set_developer_overlay(bool enabled, int object_count, float fps,
                                const char* current_task, int warning_count) override {
         developer_overlay_ = enabled;
