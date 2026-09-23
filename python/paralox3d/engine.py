@@ -5,6 +5,7 @@ import inspect
 import time
 from .input import _default_input
 from .native import load
+from .modes import modes
 
 _default_engine=None
 
@@ -30,6 +31,12 @@ class Engine:
         self._native.p3d_entity_set_position.argtypes=[ctypes.c_void_p,ctypes.c_uint32,ctypes.c_float,ctypes.c_float,ctypes.c_float]
         self._native.p3d_entity_set_position.restype=None
         self._native.p3d_engine_step.argtypes=[ctypes.c_void_p]; self._native.p3d_engine_step.restype=ctypes.c_int
+        self._native.p3d_engine_set_developer_overlay.argtypes=[
+            ctypes.c_void_p, ctypes.c_int, ctypes.c_int, ctypes.c_float,
+            ctypes.c_char_p, ctypes.c_int
+        ]; self._native.p3d_engine_set_developer_overlay.restype=None
+        self._native.p3d_engine_diagnostics_clicked.argtypes=[ctypes.c_void_p]
+        self._native.p3d_engine_diagnostics_clicked.restype=ctypes.c_int
     def _create_entity(self): return self._native.p3d_entity_create(self._engine)
     def _set_position(self,handle,position):
         self._native.p3d_entity_set_position(self._engine,handle,position.x,position.y,position.z)
@@ -41,9 +48,20 @@ class Engine:
         for obj in tuple(self._objects): obj._update_components(dt)
     def start(self,update=None):
         if update is not None: self._update_callback=update
-        self._running=True; previous=time.perf_counter()
+        self._running=True; previous=time.perf_counter(); fps=0.0
         while self._running and self._native.p3d_engine_step(self._engine):
             now=time.perf_counter(); dt=now-previous; previous=now
+            if dt > 0:
+                instant_fps = 1.0 / dt
+                fps = instant_fps if fps == 0.0 else fps * 0.9 + instant_fps * 0.1
+            self._native.p3d_engine_set_developer_overlay(
+                self._engine,
+                int(modes.developer),
+                len(self._objects),
+                fps,
+                b"Running game loop",
+                0,
+            )
             self.update(dt); _default_input._end_frame()
             if self.max_fps:
                 target=1.0/self.max_fps
