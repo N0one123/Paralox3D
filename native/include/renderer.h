@@ -8,6 +8,9 @@ public:
     virtual void draw_cube(float x, float y, float z) = 0;
     virtual void end_frame() = 0;
     virtual bool running() const = 0;
+    virtual void set_developer_overlay(bool enabled, int object_count, float fps,
+                                        const char* current_task, int warning_count) = 0;
+    virtual bool diagnostics_clicked() = 0;
 };
 
 Renderer* create_platform_renderer();
