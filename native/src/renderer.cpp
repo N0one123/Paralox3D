@@ -74,6 +74,13 @@ public:
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
         glMatrixMode(GL_MODELVIEW);
         glLoadIdentity();
+
+        // Paralox3D uses a left-handed, Y-up world coordinate system:
+        // +X = right, +Y = up, +Z = forward.
+        // OpenGL's default camera looks down -Z, so mirror the Z axis at
+        // the rendering boundary. This lets engine/world coordinates keep
+        // the Unity-style +Z-forward convention.
+        glScalef(1.0f, 1.0f, -1.0f);
         return true;
     }
 
