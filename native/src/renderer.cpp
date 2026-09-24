@@ -75,6 +75,13 @@ public:
         glMatrixMode(GL_MODELVIEW);
         glLoadIdentity();
 
+        if (camera_enabled_) {
+            glRotatef(-camera_pitch_, 1.0f, 0.0f, 0.0f);
+            glRotatef(-camera_yaw_, 0.0f, 1.0f, 0.0f);
+            glRotatef(-camera_roll_, 0.0f, 0.0f, 1.0f);
+            glTranslatef(-camera_x_, -camera_y_, -camera_z_);
+        }
+
         // Paralox3D uses a left-handed, Y-up world coordinate system:
         // +X = right, +Y = up, +Z = forward.
         // OpenGL's default camera looks down -Z, so mirror the Z axis at
@@ -118,6 +125,13 @@ public:
     }
 
     bool running() const override { return running_; }
+
+    void camera_set_enabled(bool enabled) override { camera_enabled_ = enabled; }
+
+    void camera_set_transform(float x, float y, float z, float pitch, float yaw, float roll) override {
+        camera_x_ = x; camera_y_ = y; camera_z_ = z;
+        camera_pitch_ = pitch; camera_yaw_ = yaw; camera_roll_ = roll;
+    }
 
     bool key_held(int key_code) const override {
         if (key_code < 0 || key_code > 255) return false;
@@ -230,6 +244,51 @@ private:
                 PostQuitMessage(0);
                 return 0;
             }
+            if (msg == WM_LBUTTONDOWN && self->camera_enabled_) {
+                SetCapture(hwnd);
+                self->left_drag_ = true;
+                self->last_mouse_x_ = static_cast<int>(static_cast<short>(LOWORD(lparam)));
+                self->last_mouse_y_ = static_cast<int>(static_cast<short>(HIWORD(lparam)));
+                return 0;
+            }
+            if (msg == WM_RBUTTONDOWN && self->camera_enabled_) {
+                SetCapture(hwnd);
+                self->right_drag_ = true;
+                self->last_mouse_x_ = static_cast<int>(static_cast<short>(LOWORD(lparam)));
+                self->last_mouse_y_ = static_cast<int>(static_cast<short>(HIWORD(lparam)));
+                return 0;
+            }
+            if (msg == WM_LBUTTONUP) {
+                self->left_drag_ = false;
+                if (!self->right_drag_) ReleaseCapture();
+                return 0;
+            }
+            if (msg == WM_RBUTTONUP) {
+                self->right_drag_ = false;
+                if (!self->left_drag_) ReleaseCapture();
+                return 0;
+            }
+            if (msg == WM_MOUSEMOVE && self->camera_enabled_ &&
+                (self->left_drag_ || self->right_drag_)) {
+                const int x = static_cast<int>(static_cast<short>(LOWORD(lparam)));
+                const int y = static_cast<int>(static_cast<short>(HIWORD(lparam)));
+                const float dx = static_cast<float>(x - self->last_mouse_x_);
+                const float dy = static_cast<float>(y - self->last_mouse_y_);
+                self->last_mouse_x_ = x;
+                self->last_mouse_y_ = y;
+
+                if (self->left_drag_) {
+                    self->camera_yaw_ += dx * 0.35f;
+                    self->camera_pitch_ += dy * 0.35f;
+                    if (self->camera_pitch_ > 89.0f) self->camera_pitch_ = 89.0f;
+                    if (self->camera_pitch_ < -89.0f) self->camera_pitch_ = -89.0f;
+                }
+                if (self->right_drag_) {
+                    self->camera_x_ -= dx * 0.01f;
+                    self->camera_y_ += dy * 0.01f;
+                }
+                return 0;
+            }
             if (msg == WM_LBUTTONDOWN && self->developer_overlay_) {
                 const int x = LOWORD(lparam);
                 const int y = HIWORD(lparam);
@@ -263,6 +322,12 @@ private:
     float fps_ = 0.0f;
     int warning_count_ = 0;
     std::string current_task_ = "Idle";
+
+    bool camera_enabled_ = false;
+    float camera_x_ = 0.0f, camera_y_ = 0.0f, camera_z_ = 0.0f;
+    float camera_pitch_ = 0.0f, camera_yaw_ = 0.0f, camera_roll_ = 0.0f;
+    bool left_drag_ = false, right_drag_ = false;
+    int last_mouse_x_ = 0, last_mouse_y_ = 0;
 };
 
 #endif
