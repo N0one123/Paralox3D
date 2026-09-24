@@ -1,4 +1,4 @@
-""""Simple built-in camera for Paralox3D."""
+"""Simple built-in camera for Paralox3D."""
 
 from .math import Vec3
 
@@ -36,34 +36,58 @@ class Camera:
         self._mark_dirty()
 
     @property
-    def x(self): return self._position.x
+    def x(self):
+        return self._position.x
+
     @x.setter
-    def x(self, value): self._position.x = float(value); self._mark_dirty()
+    def x(self, value):
+        self._position.x = float(value)
+        self._mark_dirty()
 
     @property
-    def y(self): return self._position.y
+    def y(self):
+        return self._position.y
+
     @y.setter
-    def y(self, value): self._position.y = float(value); self._mark_dirty()
+    def y(self, value):
+        self._position.y = float(value)
+        self._mark_dirty()
 
     @property
-    def z(self): return self._position.z
+    def z(self):
+        return self._position.z
+
     @z.setter
-    def z(self, value): self._position.z = float(value); self._mark_dirty()
+    def z(self, value):
+        self._position.z = float(value)
+        self._mark_dirty()
 
     @property
-    def pitch(self): return self._rotation.x
+    def pitch(self):
+        return self._rotation.x
+
     @pitch.setter
-    def pitch(self, value): self._rotation.x = float(value); self._mark_dirty()
+    def pitch(self, value):
+        self._rotation.x = float(value)
+        self._mark_dirty()
 
     @property
-    def yaw(self): return self._rotation.y
+    def yaw(self):
+        return self._rotation.y
+
     @yaw.setter
-    def yaw(self, value): self._rotation.y = float(value); self._mark_dirty()
+    def yaw(self, value):
+        self._rotation.y = float(value)
+        self._mark_dirty()
 
     @property
-    def roll(self): return self._rotation.z
+    def roll(self):
+        return self._rotation.z
+
     @roll.setter
-    def roll(self, value): self._rotation.z = float(value); self._mark_dirty()
+    def roll(self, value):
+        self._rotation.z = float(value)
+        self._mark_dirty()
 
     def move(self, x=0.0, y=0.0, z=0.0):
         self.x += x
@@ -72,6 +96,7 @@ class Camera:
 
     def look_at(self, target):
         import math
+
         dx = target.x - self.x
         dy = target.y - self.y
         dz = target.z - self.z
@@ -80,4 +105,3 @@ class Camera:
 
 
 camera = Camera()
-"
