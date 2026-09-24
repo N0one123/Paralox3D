@@ -7,4 +7,5 @@ from .components import Component,Script
 from .input import key,held,pressed
 from .modes import modes
 from .clock import dt
-__all__=["Engine","start","Object","Entity","Vec3","Scene","current_scene","Component","Script","key","held","pressed","modes","dt"]
+from .camera import camera, Camera
+__all__=["Engine","start","Object","Entity","Vec3","Scene","current_scene","Component","Script","key","held","pressed","modes","dt","camera","Camera"]
