@@ -230,14 +230,21 @@ private:
             DEFAULT_QUALITY, DEFAULT_PITCH | FF_DONTCARE, "Consolas");
         HFONT old_font = static_cast<HFONT>(SelectObject(dc, font));
 
+        // Clear the entire top-right HUD area before redrawing it.
+        // This prevents old digits from remaining when values shrink.
+        const int hud_right = width_ - 18;
+        const int hud_left = width_ - 330;
+        RECT hud_clear{hud_left, 8, hud_right, 50};
+        FillRect(dc, &hud_clear, static_cast<HBRUSH>(GetStockObject(BLACK_BRUSH)));
+
         char line[128];
         std::snprintf(line, sizeof(line), "Objects: %d", object_count_);
-        draw_text(dc, width_ - 140, 20, line, RGB(235, 235, 235));
+        draw_text(dc, hud_left + 8, 14, line, RGB(235, 235, 235));
         std::snprintf(line, sizeof(line), "FPS: %.1f", fps_);
-        draw_text(dc, width_ - 140, 42, line, RGB(235, 235, 235));
+        draw_text(dc, hud_left + 8, 34, line, RGB(235, 235, 235));
 
         const int button_w = 112, button_h = 28;
-        const int button_x = width_ - button_w - 18, button_y = 16;
+        const int button_x = width_ - button_w - 18, button_y = 56;
         RECT button{button_x, button_y, button_x + button_w, button_y + button_h};
         FillRect(dc, &button, static_cast<HBRUSH>(GetStockObject(BLACK_BRUSH)));
         FrameRect(dc, &button, static_cast<HBRUSH>(GetStockObject(WHITE_BRUSH)));
