@@ -306,12 +306,31 @@ private:
                 PostQuitMessage(0);
                 return 0;
             }
-            if (msg == WM_LBUTTONDOWN && self->camera_enabled_) {
-                SetCapture(hwnd);
-                self->left_drag_ = true;
-                self->last_mouse_x_ = static_cast<int>(static_cast<short>(LOWORD(lparam)));
-                self->last_mouse_y_ = static_cast<int>(static_cast<short>(HIWORD(lparam)));
-                return 0;
+            if (msg == WM_LBUTTONDOWN) {
+                const int x = static_cast<int>(static_cast<short>(LOWORD(lparam)));
+                const int y = static_cast<int>(static_cast<short>(HIWORD(lparam)));
+
+                // UI gets first priority when developer mode is enabled.
+                // Otherwise camera LMB dragging would consume the click.
+                if (self->developer_overlay_) {
+                    const int button_w = 112, button_h = 28;
+                    const int button_x = self->width_ - button_w - 18;
+                    const int button_y = 56;
+                    if (x >= button_x && x <= button_x + button_w &&
+                        y >= button_y && y <= button_y + button_h) {
+                        self->diagnostics_open_ = !self->diagnostics_open_;
+                        self->diagnostics_clicked_ = true;
+                        return 0;
+                    }
+                }
+
+                if (self->camera_enabled_) {
+                    SetCapture(hwnd);
+                    self->left_drag_ = true;
+                    self->last_mouse_x_ = x;
+                    self->last_mouse_y_ = y;
+                    return 0;
+                }
             }
             if (msg == WM_RBUTTONDOWN && self->camera_enabled_) {
                 SetCapture(hwnd);
@@ -382,18 +401,6 @@ private:
                     self->camera_z_ += up_z * dy * pan_speed;
                 }
                 return 0;
-            }
-            if (msg == WM_LBUTTONDOWN && self->developer_overlay_) {
-                const int x = LOWORD(lparam);
-                const int y = HIWORD(lparam);
-                const int button_w = 112, button_h = 28;
-                const int button_x = self->width_ - button_w - 18, button_y = 16;
-                if (x >= button_x && x <= button_x + button_w &&
-                    y >= button_y && y <= button_y + button_h) {
-                    self->diagnostics_open_ = !self->diagnostics_open_;
-                    self->diagnostics_clicked_ = true;
-                    return 0;
-                }
             }
             if (msg == WM_SIZE && self->hglrc_) {
                 const int w = LOWORD(lparam), h = HIWORD(lparam);
