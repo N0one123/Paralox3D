@@ -1,4 +1,4 @@
-"""Paralox3D engine and low-boilerplate game loop."""
+""""Paralox3D engine and low-boilerplate game loop."""
 
 import ctypes
 import inspect
@@ -21,6 +21,7 @@ class Engine:
         global _default_engine
         self.title=title; self.width=width; self.height=height; self.max_fps=max_fps
         self._objects=[]; self._update_callback=None; self._running=False
+        self._camera_active=False
         self._native=load(); self._configure_abi()
         self._engine=self._native.p3d_engine_create(width,height,title.encode("utf-8"))
         if not self._engine: raise RuntimeError("Paralox3D native engine creation failed.")
@@ -41,6 +42,14 @@ class Engine:
         ]; self._native.p3d_engine_set_developer_overlay.restype=None
         self._native.p3d_engine_diagnostics_clicked.argtypes=[ctypes.c_void_p]
         self._native.p3d_engine_diagnostics_clicked.restype=ctypes.c_int
+        self._native.p3d_camera_set_enabled.argtypes=[ctypes.c_void_p,ctypes.c_int]
+        self._native.p3d_camera_set_enabled.restype=None
+        self._native.p3d_camera_set_transform.argtypes=[
+            ctypes.c_void_p,
+            ctypes.c_float,ctypes.c_float,ctypes.c_float,
+            ctypes.c_float,ctypes.c_float,ctypes.c_float
+        ]
+        self._native.p3d_camera_set_transform.restype=None
     def _create_entity(self): return self._native.p3d_entity_create(self._engine)
     def _set_position(self,handle,position):
         self._native.p3d_entity_set_position(self._engine,handle,position.x,position.y,position.z)
@@ -53,24 +62,33 @@ class Engine:
     def start(self,update=None):
         if update is not None: self._update_callback=update
         self._running=True; previous=time.perf_counter(); fps=0.0
-        while self._running and self._native.p3d_engine_step(self._engine):
+        while self._running:
+            engine_ptr=ctypes.c_void_p(self._engine)
+            camera_enabled=bool(modes.camera)
+            self._native.p3d_camera_set_enabled(engine_ptr, int(camera_enabled))
+            if camera_enabled and (camera._dirty or not self._camera_active):
+                self._native.p3d_camera_set_transform(
+                    engine_ptr, camera.x, camera.y, camera.z,
+                    camera.pitch, camera.yaw, camera.roll
+                )
+                camera._clear_dirty()
+            self._camera_active=camera_enabled
+            if not self._native.p3d_engine_step(engine_ptr):
+                break
             now=time.perf_counter(); frame_dt=now-previous; previous=now
             _set_dt(frame_dt)
             if frame_dt > 0:
                 instant_fps = 1.0 / frame_dt
                 fps = instant_fps if fps == 0.0 else fps * 0.9 + instant_fps * 0.1
-            self._native.p3d_camera_set_enabled(self._engine, int(modes.camera))
-            if modes.camera:
-                self._native.p3d_camera_set_transform(self._engine, camera.x, camera.y, camera.z, camera.pitch, camera.yaw, camera.roll)
             self._native.p3d_engine_set_developer_overlay(
-                self._engine,
+                engine_ptr,
                 int(modes.developer),
                 len(self._objects),
                 fps,
                 b"Running game loop",
                 0,
             )
-            _default_input._sync(lambda key_code: self._native.p3d_input_key_held(self._engine, key_code))
+            _default_input._sync(lambda key_code: self._native.p3d_input_key_held(engine_ptr, key_code))
             self.update(); _default_input._end_frame()
             if self.max_fps:
                 target=1.0/self.max_fps
@@ -79,7 +97,7 @@ class Engine:
     def close(self):
         global _default_engine
         if self._engine:
-            self._native.p3d_engine_destroy(self._engine); self._engine=None; self._running=False
+            self._native.p3d_engine_destroy(ctypes.c_void_p(self._engine)); self._engine=None; self._running=False
             if _default_engine is self: _default_engine=None
     def __del__(self):
         try: self.close()
@@ -91,3 +109,4 @@ def start(**engine_options):
     frame=inspect.currentframe(); caller=frame.f_back if frame else None
     callback=caller.f_globals.get("update") if caller else None
     engine.start(callback if callable(callback) else None)
+"
