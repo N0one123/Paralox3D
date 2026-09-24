@@ -2,6 +2,8 @@
 
 A performance-first Python 3D engine designed from the ground up for desktop and mobile.
 
+**[Read the Documentation](https://n0one123.github.io/Paralox3D/)**
+
 ## API philosophy
 
 Paralox3D should feel like writing a game, not manually operating an engine.
