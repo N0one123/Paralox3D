@@ -22,7 +22,7 @@ from paralox3d import *
 
 cube = Object("cube", position=(0, 0, -5))
 
-def update(dt):
+def update():
     cube.x += 0.5 * dt
 
 start()
@@ -74,6 +74,20 @@ Native C++ engine
 ```
 
 Lighting is deliberately postponed. When it is introduced, it must be designed for low overhead and older hardware rather than assuming expensive directional lighting is acceptable.
+
+## Native builds
+
+The native core is built without CMake.
+
+For a source checkout:
+
+```text
+python -m paralox3d build
+```
+
+The build system currently supports Windows, Linux, and macOS native targets. Android and iOS targets are reserved for future platform toolchains.
+
+When building a wheel for distribution, the native library is built and bundled into the wheel.
 
 ## Status
 
