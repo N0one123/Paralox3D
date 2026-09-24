@@ -28,6 +28,7 @@ P3D_API void p3d_camera_set_transform(P3DEngine* engine, float x, float y, float
 P3D_API void p3d_engine_set_developer_overlay(P3DEngine* engine, int enabled, int object_count,
                                               float fps, const char* current_task, int warning_count);
 P3D_API int p3d_engine_diagnostics_clicked(P3DEngine* engine);
+P3D_API void p3d_engine_set_debug_colliders(P3DEngine* engine, const float* bounds, int count);
 P3D_API int p3d_engine_step(P3DEngine* engine);
 
 #ifdef __cplusplus

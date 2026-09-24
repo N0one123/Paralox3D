@@ -7,6 +7,7 @@
 #include <cstdio>
 #include <cstring>
 #include <string>
+#include <vector>
 
 class Win32OpenGLRenderer final : public Renderer {
 public:
@@ -115,6 +116,7 @@ public:
     }
 
     void end_frame() override {
+        if (developer_overlay_) draw_debug_colliders();
         SwapBuffers(hdc_);
         if (developer_overlay_) draw_developer_overlay();
     }
@@ -148,6 +150,16 @@ public:
         return clicked;
     }
 
+    void set_debug_colliders(const float* bounds, int count) override {
+        debug_colliders_.clear();
+        if (!developer_overlay_ || !bounds || count <= 0) return;
+        debug_colliders_.reserve(static_cast<size_t>(count));
+        for (int i = 0; i < count; ++i) {
+            const float* b = bounds + i * 6;
+            debug_colliders_.push_back({b[0], b[1], b[2], b[3], b[4], b[5]});
+        }
+    }
+
     ~Win32OpenGLRenderer() override {
         if (hglrc_) { wglMakeCurrent(nullptr, nullptr); wglDeleteContext(hglrc_); }
         if (hdc_ && hwnd_) ReleaseDC(hwnd_, hdc_);
@@ -159,6 +171,53 @@ private:
         SetTextColor(dc, color);
         SetBkMode(dc, TRANSPARENT);
         TextOutA(dc, x, y, text, static_cast<int>(std::strlen(text)));
+    }
+
+    struct DebugBox {
+        float min_x, min_y, min_z;
+        float max_x, max_y, max_z;
+    };
+
+    void draw_debug_colliders() {
+        if (!developer_overlay_ || debug_colliders_.empty()) return;
+
+        glDisable(GL_DEPTH_TEST);
+        glLineWidth(1.5f);
+
+        for (const auto& b : debug_colliders_) {
+            const float x0 = b.min_x, x1 = b.max_x;
+            const float y0 = b.min_y, y1 = b.max_y;
+            const float z0 = b.min_z, z1 = b.max_z;
+
+            glColor3f(1.0f, 0.85f, 0.1f);
+            glBegin(GL_LINES);
+            glVertex3f(x0,y0,z0); glVertex3f(x1,y0,z0);
+            glVertex3f(x1,y0,z0); glVertex3f(x1,y1,z0);
+            glVertex3f(x1,y1,z0); glVertex3f(x0,y1,z0);
+            glVertex3f(x0,y1,z0); glVertex3f(x0,y0,z0);
+            glVertex3f(x0,y0,z1); glVertex3f(x1,y0,z1);
+            glVertex3f(x1,y0,z1); glVertex3f(x1,y1,z1);
+            glVertex3f(x1,y1,z1); glVertex3f(x0,y1,z1);
+            glVertex3f(x0,y1,z1); glVertex3f(x0,y0,z1);
+            glVertex3f(x0,y0,z0); glVertex3f(x0,y0,z1);
+            glVertex3f(x1,y0,z0); glVertex3f(x1,y0,z1);
+            glVertex3f(x1,y1,z0); glVertex3f(x1,y1,z1);
+            glVertex3f(x0,y1,z0); glVertex3f(x0,y1,z1);
+            glEnd();
+
+            const float cx = (x0 + x1) * 0.5f;
+            const float cy = (y0 + y1) * 0.5f;
+            const float cz = (z0 + z1) * 0.5f;
+            const float s = 0.18f;
+            glColor3f(1.0f, 1.0f, 1.0f);
+            glBegin(GL_LINES);
+            glVertex3f(cx-s,cy,cz); glVertex3f(cx+s,cy,cz);
+            glVertex3f(cx,cy-s,cz); glVertex3f(cx,cy+s,cz);
+            glVertex3f(cx,cy,cz-s); glVertex3f(cx,cy,cz+s);
+            glEnd();
+        }
+
+        glEnable(GL_DEPTH_TEST);
     }
 
     void draw_developer_overlay() {
@@ -317,6 +376,7 @@ private:
     float fps_ = 0.0f;
     int warning_count_ = 0;
     std::string current_task_ = "Idle";
+    std::vector<DebugBox> debug_colliders_;
 
     bool camera_enabled_ = false;
     float camera_x_ = 0.0f, camera_y_ = 0.0f, camera_z_ = 0.0f;

@@ -72,6 +72,11 @@ int p3d_engine_diagnostics_clicked(P3DEngine* engine) {
     return engine->renderer->diagnostics_clicked() ? 1 : 0;
 }
 
+void p3d_engine_set_debug_colliders(P3DEngine* engine, const float* bounds, int count) {
+    if (!engine || !engine->renderer) return;
+    engine->renderer->set_debug_colliders(bounds, count);
+}
+
 int p3d_engine_step(P3DEngine* engine) {
     if (!engine || !engine->running || !engine->renderer) return 0;
     if (!engine->renderer->begin_frame()) {

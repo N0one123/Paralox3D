@@ -85,6 +85,9 @@ class Engine:
         self._native.p3d_engine_diagnostics_clicked.argtypes = [ctypes.c_void_p]
         self._native.p3d_engine_diagnostics_clicked.restype = ctypes.c_int
 
+        self._native.p3d_engine_set_debug_colliders.argtypes = [ctypes.c_void_p, ctypes.POINTER(ctypes.c_float), ctypes.c_int]
+        self._native.p3d_engine_set_debug_colliders.restype = None
+
         self._native.p3d_camera_set_enabled.argtypes = [
             ctypes.c_void_p, ctypes.c_int
         ]
@@ -174,6 +177,16 @@ class Engine:
                 b"Running game loop",
                 0,
             )
+
+            if modes.developer:
+                values = []
+                for obj in self._objects:
+                    minimum, maximum = obj.collider.min, obj.collider.max
+                    values.extend((minimum.x, minimum.y, minimum.z, maximum.x, maximum.y, maximum.z))
+                bounds = (ctypes.c_float * len(values))(*values) if values else None
+                self._native.p3d_engine_set_debug_colliders(engine_ptr, bounds, len(self._objects))
+            else:
+                self._native.p3d_engine_set_debug_colliders(engine_ptr, None, 0)
 
             _default_input._sync(
                 lambda key_code: self._native.p3d_input_key_held(
