@@ -7,6 +7,7 @@ from .clock import _set_dt
 from .input import _default_input
 from .native import load
 from .modes import modes
+from .camera import camera
 
 _default_engine=None
 
@@ -58,6 +59,9 @@ class Engine:
             if frame_dt > 0:
                 instant_fps = 1.0 / frame_dt
                 fps = instant_fps if fps == 0.0 else fps * 0.9 + instant_fps * 0.1
+            self._native.p3d_camera_set_enabled(self._engine, int(modes.camera))
+            if modes.camera:
+                self._native.p3d_camera_set_transform(self._engine, camera.x, camera.y, camera.z, camera.pitch, camera.yaw, camera.roll)
             self._native.p3d_engine_set_developer_overlay(
                 self._engine,
                 int(modes.developer),
