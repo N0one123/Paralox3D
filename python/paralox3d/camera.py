@@ -97,11 +97,17 @@ class Camera:
     def look_at(self, target):
         import math
 
+        # Accept either Vec3 or a plain (x, y, z) tuple/list.
+        if not hasattr(target, "x"):
+            target = Vec3(*target)
+
         dx = target.x - self.x
         dy = target.y - self.y
         dz = target.z - self.z
-        self.yaw = math.degrees(math.atan2(dx, dz))
-        self.pitch = -math.degrees(math.atan2(dy, math.hypot(dx, dz)))
+
+        # Camera convention: yaw=0 looks along -Z.
+        self.yaw = math.degrees(math.atan2(dx, -dz))
+        self.pitch = math.degrees(math.atan2(dy, math.hypot(dx, dz)))
 
 
 camera = Camera()
