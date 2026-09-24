@@ -1,0 +1,245 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="Beginner-friendly documentation for Paralox3D, a simple Python 3D engine with a powerful native core.">
+  <title>Paralox3D Documentation</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <header class="topbar">
+    <a class="brand" href="#top">Paralox3D</a>
+    <button class="menu-button" aria-label="Toggle navigation" aria-expanded="false">Menu</button>
+    <nav id="nav">
+      <a href="#installation">Installation</a>
+      <a href="#basics">Basics</a>
+      <a href="#camera">Camera</a>
+      <a href="#input">Input</a>
+      <a href="#collision">Collision</a>
+      <a href="#components">Components</a>
+      <a href="#scenes">Scenes</a>
+      <a href="#developer">Developer mode</a>
+      <a href="#api">API</a>
+    </nav>
+  </header>
+
+  <main id="top">
+    <section class="hero">
+      <p class="eyebrow">Python 3D engine</p>
+      <h1>Simple to start.<br>Powerful when you need it.</h1>
+      <p class="lead">Paralox3D is built for beginners who want to make a 3D game without learning a giant engine first — while still giving you direct control over things like transforms, colliders, scenes, input, and the native renderer.</p>
+      <div class="hero-actions">
+        <a class="button primary" href="#installation">Get started</a>
+        <a class="button" href="https://github.com/N0one123/Paralox3D">View source</a>
+      </div>
+    </section>
+
+    <div class="layout">
+      <aside class="sidebar">
+        <strong>On this page</strong>
+        <a href="#installation">Installation</a>
+        <a href="#first-game">Your first game</a>
+        <a href="#objects">Objects</a>
+        <a href="#transforms">Transforms</a>
+        <a href="#game-loop">Game loop</a>
+        <a href="#camera">Camera</a>
+        <a href="#input">Input</a>
+        <a href="#collision">Collision</a>
+        <a href="#components">Components</a>
+        <a href="#scenes">Scenes</a>
+        <a href="#developer">Developer mode</a>
+        <a href="#api">API reference</a>
+      </aside>
+
+      <article class="content">
+        <section id="installation">
+          <h2>Installation</h2>
+          <p>Paralox3D is available on PyPI. For a normal installation, use:</p>
+          <pre><code>python -m pip install paralox3d</code></pre>
+          <p>Then create a Python file and import the engine:</p>
+          <pre><code>from paralox3d import *</code></pre>
+          <div class="note"><strong>0.1.0:</strong> This documentation describes the public API shipped with Paralox3D 0.1.0. Some parts of the engine are intentionally still early-development features.</div>
+        </section>
+
+        <section id="first-game">
+          <h2>Your first game</h2>
+          <p>The smallest useful Paralox3D program can be very small:</p>
+          <pre><code>from paralox3d import *
+
+cube = Object("cube", position=(0, 0, -5))
+
+def update():
+    cube.x += 0.5 * dt
+
+start()</code></pre>
+          <p>That is the basic idea: create your objects, write what should happen every frame in <code>update()</code>, then call <code>start()</code>. Paralox3D handles the main loop for you.</p>
+        </section>
+
+        <section id="basics">
+          <h2>Basics</h2>
+          <p>Paralox3D deliberately keeps common game code close to plain Python. An <code>Object</code> represents something in your 3D world, and its properties describe where it is and how it looks.</p>
+
+          <h3 id="objects">Objects</h3>
+          <pre><code>player = Object(
+    "cube",
+    position=(0, 1, 0),
+    scale=(1, 2, 1),
+    name="Player"
+)</code></pre>
+          <p>The first argument is the shape. In 0.1.0, the native renderer provides the basic cube primitive. Position, scale, and name can be supplied when the object is created.</p>
+
+          <h3 id="transforms">Transforms</h3>
+          <p>You can work with a complete vector or change individual axes. The same style is used for position, rotation, and scale.</p>
+          <pre><code>cube.position = (2, 1, -5)
+cube.x = 3
+cube.y += 1
+
+cube.rotation = (0, 45, 0)
+
+cube.scale = (2, 1, 2)
+cube.scale.x = 3</code></pre>
+          <p>This is intentionally flexible: use whichever form makes your game code easier to understand.</p>
+
+          <h3 id="game-loop">Game loop and <code>dt</code></h3>
+          <p><code>update()</code> is called once per frame. You do not need to pass a delta-time argument to it. Import <code>dt</code> and use it directly when movement should be frame-rate independent.</p>
+          <pre><code>from paralox3d import *
+
+player = Object("cube", position=(0, 0, -5))
+speed = 4
+
+def update():
+    player.x += speed * dt
+
+start()</code></pre>
+          <p><code>dt</code> represents the time since the previous frame. Multiplying movement by <code>dt</code> means the movement is based on elapsed time rather than simply on how many frames the computer happens to draw.</p>
+        </section>
+
+        <section id="camera">
+          <h2>Camera</h2>
+          <p>The built-in camera gives you a simple starting point while still exposing its position and rotation for more controlled setups.</p>
+          <pre><code>modes.camera = True
+
+camera.position = (0, 2, 8)
+camera.look_at((0, 0, 0))</code></pre>
+
+          <h3>Position and rotation</h3>
+          <pre><code>camera.x = 0
+camera.y = 2
+camera.z = 8
+
+camera.pitch = -10
+camera.yaw = 0
+camera.roll = 0</code></pre>
+          <p>You can also assign <code>camera.position</code> and <code>camera.rotation</code> as three-value tuples.</p>
+
+          <h3><code>look_at()</code></h3>
+          <p>Instead of calculating camera angles yourself, point the camera at a target:</p>
+          <pre><code>camera.look_at((0, 0, 0))</code></pre>
+          <p>The target can be a three-value position or a <code>Vec3</code>-like object.</p>
+
+          <h3>Mouse controls</h3>
+          <p>With camera mode enabled, the built-in native camera supports mouse controls. Left-drag rotates the camera. Right-drag pans it. The native camera movement is kept separate from ordinary Python transform updates so the controls remain responsive.</p>
+        </section>
+
+        <section id="input">
+          <h2>Input</h2>
+          <p>Input helpers are designed to read naturally inside <code>update()</code>.</p>
+          <pre><code>if key("space"):
+    print("Space is down")
+
+if held("w"):
+    player.z -= 5 * dt
+
+if pressed("escape"):
+    print("Escape was pressed")</code></pre>
+          <p><code>key()</code> checks the current key state, <code>held()</code> is for a key being held, and <code>pressed()</code> is for a press event. Keyboard names include letters, digits, common control keys, and the arrow keys.</p>
+        </section>
+
+        <section id="collision">
+          <h2>Collision</h2>
+          <p>Collision is intentionally simple at the surface, but it is not locked down. Every <code>Object</code> has a configurable <code>collider</code> you can inspect and change.</p>
+
+          <h3>Basic collision check</h3>
+          <pre><code>if Collision(player, wall):
+    print("Player hit the wall")</code></pre>
+
+          <h3>Find everything touching an object</h3>
+          <pre><code>hits = Collision(player)
+
+for other in hits:
+    print("Touching:", other.name)</code></pre>
+
+          <h3>Control the collider</h3>
+          <pre><code>player.collider.size = (0.8, 1.8, 0.8)
+player.collider.offset = (0, 0.1, 0)
+
+player.collider.enabled = False</code></pre>
+          <p>The default collider follows the object's scale. You can replace its size, move it with an offset, or disable it when your game needs different behaviour.</p>
+          <div class="note"><strong>How it works in 0.1.0:</strong> the built-in collider uses axis-aligned bounding boxes (AABBs). It is a practical starting point for simple games, while the exposed collider properties leave room for more controlled gameplay code.</div>
+        </section>
+
+        <section id="components">
+          <h2>Components</h2>
+          <p>Components provide a place for behaviour that you want to attach to an object rather than putting everything into one large game script.</p>
+          <pre><code>from paralox3d import Component, Script</code></pre>
+          <p><code>Component</code> is the base component type, and <code>Script</code> is the built-in script component. The component system is part of the 0.1.0 foundation and is intentionally small while the engine develops.</p>
+        </section>
+
+        <section id="scenes">
+          <h2>Scenes</h2>
+          <p>Scenes are Paralox3D's way of keeping levels or worlds organised. Instead of rebuilding a collection of objects every time you change level, a scene gives that world a named home.</p>
+          <pre><code>from paralox3d import Scene, current_scene
+
+level = Scene("Level 1")</code></pre>
+          <p>Scenes are a first-class part of the engine architecture. The 0.1.0 API is deliberately small here; more scene-management functionality can be added without changing the basic idea.</p>
+        </section>
+
+        <section id="developer">
+          <h2>Developer mode</h2>
+          <p>When you are debugging a game, you can turn on developer mode:</p>
+          <pre><code>modes.developer = True</code></pre>
+          <p>Developer mode enables the engine's visual and diagnostic debugging tools. In 0.1.0 this includes the developer information overlay and visual collider bounds.</p>
+          <p>Turn it off when you want a normal presentation:</p>
+          <pre><code>modes.developer = False</code></pre>
+          <p>The important idea is that developer mode is a master switch for the engine's visual debug features, so you do not have to manage every debug display separately.</p>
+        </section>
+
+        <section id="api">
+          <h2>API reference</h2>
+          <p>These are the main public pieces you are likely to use in a beginner project.</p>
+          <div class="api-grid">
+            <div class="api-card"><code>Object()</code><span>Create a 3D object.</span></div>
+            <div class="api-card"><code>start()</code><span>Start the automatic game loop.</span></div>
+            <div class="api-card"><code>dt</code><span>Time elapsed since the previous frame.</span></div>
+            <div class="api-card"><code>camera</code><span>Access the built-in camera.</span></div>
+            <div class="api-card"><code>modes.camera</code><span>Enable or disable native camera controls.</span></div>
+            <div class="api-card"><code>modes.developer</code><span>Enable or disable visual debugging.</span></div>
+            <div class="api-card"><code>key()</code><span>Read keyboard state.</span></div>
+            <div class="api-card"><code>held()</code><span>Check whether a key is held.</span></div>
+            <div class="api-card"><code>pressed()</code><span>Check for a key press.</span></div>
+            <div class="api-card"><code>Collision()</code><span>Check one or many object collisions.</span></div>
+            <div class="api-card"><code>Collider</code><span>Configure an object's collision box.</span></div>
+            <div class="api-card"><code>Vec3</code><span>Store three-dimensional values.</span></div>
+            <div class="api-card"><code>Component</code><span>Base type for object components.</span></div>
+            <div class="api-card"><code>Script</code><span>Built-in script component.</span></div>
+            <div class="api-card"><code>Scene</code><span>Represent a game world or level.</span></div>
+            <div class="api-card"><code>current_scene</code><span>Access the current scene.</span></div>
+          </div>
+        </section>
+
+        <section>
+          <h2>The Paralox3D approach</h2>
+          <p>Paralox3D is meant to sit in a useful middle ground: you should be able to make a first 3D program without fighting the engine, but the simple API should not stop you from taking control when your project grows.</p>
+          <p>For example, collision can start as one line — <code>Collision(player, wall)</code> — and then become as specific as you need by changing the collider's size, offset, and enabled state. The same philosophy applies throughout the engine: sensible defaults first, direct control when you need it.</p>
+        </section>
+      </article>
+    </div>
+  </main>
+
+  <footer>
+    <p>Paralox3D 0.1.0 · MIT License · <a href="https://github.com/N0one123/Paralox3D">GitHub</a></p>
+  </footer>
+  <script src="script.js"></script>
+</body>
+</html>
