@@ -1,0 +1,6 @@
+include README.md
+include pyproject.toml
+include setup.py
+recursive-include native/include *.h
+recursive-include native/src *.cpp
+recursive-include python/paralox3d *.py
