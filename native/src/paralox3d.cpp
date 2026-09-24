@@ -5,7 +5,7 @@
 #include <memory>
 #include <vector>
 
-struct Transform { float x=0.0f, y=0.0f, z=0.0f; };
+struct Transform { float x=0.0f, y=0.0f, z=0.0f; float sx=1.0f, sy=1.0f, sz=1.0f; };
 
 struct P3DEngine {
     int width=1280, height=720;
@@ -43,6 +43,12 @@ void p3d_entity_set_position(P3DEngine* engine, uint32_t entity,
     if (!engine || entity == 0 || entity > engine->transforms.size()) return;
     auto& t = engine->transforms[entity - 1];
     t.x=x; t.y=y; t.z=z;
+}
+
+void p3d_entity_set_scale(P3DEngine* engine, uint32_t entity, float x, float y, float z) {
+    if (!engine || entity == 0 || entity > engine->transforms.size()) return;
+    auto& t = engine->transforms[entity - 1];
+    t.sx=x; t.sy=y; t.sz=z;
 }
 
 void p3d_camera_set_enabled(P3DEngine* engine, int enabled) {
@@ -84,7 +90,7 @@ int p3d_engine_step(P3DEngine* engine) {
         return 0;
     }
     for (const auto& t : engine->transforms)
-        engine->renderer->draw_cube(t.x, t.y, t.z);
+        engine->renderer->draw_cube(t.x, t.y, t.z, t.sx, t.sy, t.sz);
     engine->renderer->end_frame();
     engine->running = engine->renderer->running();
     return engine->running ? 1 : 0;

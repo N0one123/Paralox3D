@@ -87,10 +87,11 @@ public:
         return true;
     }
 
-    void draw_cube(float x, float y, float z) override {
+    void draw_cube(float x, float y, float z, float sx, float sy, float sz) override {
         const float s = 0.5f;
         glPushMatrix();
         glTranslatef(x, y, z);
+        glScalef(sx, sy, sz);
         glBegin(GL_QUADS);
 
         glColor3f(0.15f, 0.65f, 1.0f);

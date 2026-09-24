@@ -14,6 +14,7 @@ class Object:
         self._components=[]; self.name=name or model
         self.collider=Collider(self)
         self._engine._set_position(self._handle,self._position)
+        self._engine._set_scale(self._handle,self._scale)
         self._engine.register(self)
         target=scene or current_scene()
         if target is not None: target.add(self)
@@ -43,7 +44,9 @@ class Object:
     @property
     def scale(self): return self._scale
     @scale.setter
-    def scale(self,value): self._scale=Vec3(*value)
+    def scale(self,value):
+        self._scale=Vec3(*value)
+        self._engine._set_scale(self._handle,self._scale)
     def move(self,x=0,y=0,z=0):
         self.position=(self.x+x,self.y+y,self.z+z); return self
     def add(self,component):

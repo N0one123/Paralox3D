@@ -64,6 +64,9 @@ class Engine:
         ]
         self._native.p3d_entity_set_position.restype = None
 
+        self._native.p3d_entity_set_scale.argtypes = [ctypes.c_void_p, ctypes.c_uint32, ctypes.c_float, ctypes.c_float, ctypes.c_float]
+        self._native.p3d_entity_set_scale.restype = None
+
         self._native.p3d_input_key_held.argtypes = [
             ctypes.c_void_p, ctypes.c_int
         ]
@@ -110,6 +113,11 @@ class Engine:
     def _set_position(self, handle, position):
         self._native.p3d_entity_set_position(
             self._engine, handle, position.x, position.y, position.z
+        )
+
+    def _set_scale(self, handle, scale):
+        self._native.p3d_entity_set_scale(
+            self._engine, handle, scale.x, scale.y, scale.z
         )
 
     def register(self, obj):
