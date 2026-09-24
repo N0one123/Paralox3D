@@ -45,6 +45,16 @@ void p3d_entity_set_position(P3DEngine* engine, uint32_t entity,
     t.x=x; t.y=y; t.z=z;
 }
 
+void p3d_camera_set_enabled(P3DEngine* engine, int enabled) {
+    if (!engine || !engine->renderer) return;
+    engine->renderer->camera_set_enabled(enabled != 0);
+}
+
+void p3d_camera_set_transform(P3DEngine* engine, float x, float y, float z, float pitch, float yaw, float roll) {
+    if (!engine || !engine->renderer) return;
+    engine->renderer->camera_set_transform(x, y, z, pitch, yaw, roll);
+}
+
 int p3d_input_key_held(P3DEngine* engine, int key_code) {
     if (!engine || !engine->renderer) return 0;
     return engine->renderer->key_held(key_code) ? 1 : 0;
