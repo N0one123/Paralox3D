@@ -1,9 +1,10 @@
 """High-level scene objects with low-boilerplate properties."""
 
 from .math import Vec3
+from .collision import Collider
 
 class Object:
-    __slots__=("_engine","_handle","_model","_position","_rotation","_scale","_components","name")
+    __slots__=("__dict__","_engine","_handle","_model","_position","_rotation","_scale","_components","name","collider")
     def __init__(self,model="cube",position=(0,0,0),rotation=(0,0,0),scale=(1,1,1),name=None,engine=None,scene=None):
         from .engine import get_default_engine
         from .scene import current_scene
@@ -11,6 +12,7 @@ class Object:
         self._handle=self._engine._create_entity()
         self._model=model; self._position=Vec3(*position); self._rotation=Vec3(*rotation); self._scale=Vec3(*scale)
         self._components=[]; self.name=name or model
+        self.collider=Collider(self)
         self._engine._set_position(self._handle,self._position)
         self._engine.register(self)
         target=scene or current_scene()
