@@ -273,14 +273,14 @@ private:
                 self->last_mouse_y_ = y;
 
                 if (self->left_drag_) {
-                    self->camera_yaw_ += dx * 0.20f;
-                    self->camera_pitch_ += dy * 0.20f;
+                    self->camera_yaw_ += dx * 0.25f;
+                    self->camera_pitch_ += dy * 0.25f;
                     if (self->camera_pitch_ > 89.0f) self->camera_pitch_ = 89.0f;
                     if (self->camera_pitch_ < -89.0f) self->camera_pitch_ = -89.0f;
                 }
                 if (self->right_drag_) {
-                    self->camera_x_ -= dx * 0.005f;
-                    self->camera_y_ += dy * 0.005f;
+                    self->camera_x_ -= dx * 0.0065f;
+                    self->camera_y_ += dy * 0.0065f;
                 }
                 return 0;
             }
