@@ -82,11 +82,6 @@ public:
             glTranslatef(-camera_x_, -camera_y_, -camera_z_);
         }
 
-        // Paralox3D uses a left-handed, Y-up world coordinate system:
-        // +X = right, +Y = up, +Z = forward.
-        // OpenGL's default camera looks down -Z, so mirror the Z axis at
-        // the rendering boundary. This lets engine/world coordinates keep
-        // the Unity-style +Z-forward convention.
         glScalef(1.0f, 1.0f, -1.0f);
         return true;
     }
@@ -278,14 +273,14 @@ private:
                 self->last_mouse_y_ = y;
 
                 if (self->left_drag_) {
-                    self->camera_yaw_ += dx * 0.35f;
-                    self->camera_pitch_ += dy * 0.35f;
+                    self->camera_yaw_ += dx * 0.20f;
+                    self->camera_pitch_ += dy * 0.20f;
                     if (self->camera_pitch_ > 89.0f) self->camera_pitch_ = 89.0f;
                     if (self->camera_pitch_ < -89.0f) self->camera_pitch_ = -89.0f;
                 }
                 if (self->right_drag_) {
-                    self->camera_x_ -= dx * 0.01f;
-                    self->camera_y_ += dy * 0.01f;
+                    self->camera_x_ -= dx * 0.005f;
+                    self->camera_y_ += dy * 0.005f;
                 }
                 return 0;
             }
