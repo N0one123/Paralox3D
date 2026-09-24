@@ -4,8 +4,7 @@ from __future__ import annotations
 
 import ctypes
 import os
-import shutil
-import subprocess
+import runpy
 import sys
 from pathlib import Path
 
@@ -25,40 +24,22 @@ def _source_repo():
 
 def _build_native():
     repo = _source_repo()
-    cmake_file = repo / "CMakeLists.txt"
-    if not cmake_file.is_file():
+    build_script = repo / "python" / "paralox3d" / "build.py"
+    if not build_script.is_file():
         return []
 
-    build_dir = repo / "build" / "paralox3d-native"
-    build_dir.mkdir(parents=True, exist_ok=True)
+    namespace = runpy.run_path(str(build_script))
+    path = namespace["build_native"]()
+    return [path] if path else []
 
-    subprocess.check_call(["cmake", "-S", str(repo), "-B", str(build_dir)])
-    args = ["cmake", "--build", str(build_dir)]
-    if sys.platform == "win32":
-        args += ["--config", "Release"]
-    subprocess.check_call(args)
 
-    names = _library_names()
-    possible = []
-    for name in names:
-        possible.extend([
-            build_dir / "Release" / name,
-            build_dir / "Debug" / name,
-            build_dir / name,
-            repo / "build" / "Release" / name,
-            repo / "build" / "Debug" / name,
-            repo / "build" / name,
-        ])
+def _load_library(path: Path):
+    # On Windows, bundled MinGW runtime DLLs live beside the native core.
+    # Add that directory explicitly so ctypes can resolve their dependencies.
+    if sys.platform == "win32" and hasattr(os, "add_dll_directory"):
+        os.add_dll_directory(str(path.parent))
 
-    found = [path for path in possible if path.is_file()]
-    if found:
-        package_native = repo / "python" / "paralox3d" / "_native"
-        package_native.mkdir(parents=True, exist_ok=True)
-        destination = package_native / found[0].name
-        shutil.copy2(found[0], destination)
-        return [destination, *found]
-
-    return []
+    return ctypes.CDLL(str(path))
 
 
 def load():
@@ -87,20 +68,20 @@ def load():
 
     for path in candidates:
         if path.is_file():
-            return ctypes.CDLL(str(path))
+            return _load_library(path)
 
-    # Source checkouts can transparently build the native core on first use.
+    # Source checkouts can build the native core on first use.
     try:
         built = _build_native()
     except (OSError, subprocess.CalledProcessError) as exc:
         raise RuntimeError(
             "Paralox3D could not build its native core automatically. "
-            "Make sure CMake and a C++ compiler are installed."
+            "Make sure a C++ compiler is installed."
         ) from exc
 
     for path in built:
         if path.is_file():
-            return ctypes.CDLL(str(path))
+            return _load_library(path)
 
     searched = "\n".join(f"  - {path}" for path in candidates)
     raise RuntimeError(
