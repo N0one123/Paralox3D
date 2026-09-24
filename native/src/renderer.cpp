@@ -339,8 +339,40 @@ private:
                     if (self->camera_pitch_ < -89.0f) self->camera_pitch_ = -89.0f;
                 }
                 if (self->right_drag_) {
-                    self->camera_x_ -= dx * 0.0065f;
-                    self->camera_y_ += dy * 0.0065f;
+                    // Pan in the camera's local coordinate system instead of
+                    // the fixed world X/Y axes. This keeps RMB panning aligned
+                    // with the direction the camera is facing.
+                    const float yaw = self->camera_yaw_ * 3.14159265f / 180.0f;
+                    const float pitch = self->camera_pitch_ * 3.14159265f / 180.0f;
+                    const float roll = self->camera_roll_ * 3.14159265f / 180.0f;
+
+                    const float cy = std::cos(yaw);
+                    const float sy = std::sin(yaw);
+                    const float cp = std::cos(pitch);
+                    const float sp = std::sin(pitch);
+                    const float cr = std::cos(roll);
+                    const float sr = std::sin(roll);
+
+                    // Camera-local right vector, including roll.
+                    const float right_x = cy * cr + sy * sp * sr;
+                    const float right_y = cp * sr;
+                    const float right_z = -sy * cr + cy * sp * sr;
+
+                    // Camera-local up vector, including pitch, yaw and roll.
+                    const float up_x = -cy * sr + sy * sp * cr;
+                    const float up_y = cp * cr;
+                    const float up_z = sy * sr + cy * sp * cr;
+
+                    const float pan_speed = 0.0065f;
+                    self->camera_x_ -= right_x * dx * pan_speed;
+                    self->camera_y_ += up_y * dy * pan_speed;
+                    self->camera_z_ -= right_z * dx * pan_speed;
+
+                    // Vertical screen movement can also move along X/Z when
+                    // the camera is pitched, so panning follows the view.
+                    self->camera_x_ += up_x * dy * pan_speed;
+                    self->camera_y_ += up_y * dy * pan_speed;
+                    self->camera_z_ += up_z * dy * pan_speed;
                 }
                 return 0;
             }
