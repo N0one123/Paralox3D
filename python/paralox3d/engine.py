@@ -131,6 +131,15 @@ class Engine:
             self._engine, handle, scale.x, scale.y, scale.z
         )
 
+    def _set_rotation(self, handle, rotation):
+        self._native.p3d_entity_set_rotation(self._engine, handle, rotation.x, rotation.y, rotation.z)
+
+    def _set_color(self, handle, r, g, b, a=1.0):
+        self._native.p3d_entity_set_color(self._engine, handle, r, g, b, a)
+
+    def _set_enabled(self, handle, enabled, visible):
+        self._native.p3d_entity_set_enabled(self._engine, handle, int(enabled), int(visible))
+
     def register(self, obj):
         if obj not in self._objects:
             self._objects.append(obj)
