@@ -87,29 +87,29 @@ public:
         return true;
     }
 
-    void draw_cube(float x, float y, float z, float sx, float sy, float sz) override {
+    void draw_cube(float x,float y,float z,float sx,float sy,float sz,float pitch,float yaw,float roll,float r,float g,float b,float a,bool visible) override { if(!visible)return;
         const float s = 0.5f;
         glPushMatrix();
         glTranslatef(x, y, z);
         glScalef(sx, sy, sz);
         glBegin(GL_QUADS);
 
-        glColor3f(0.15f, 0.65f, 1.0f);
+        glColor3f(r*0.70f,g*0.70f,b*0.70f);
         glVertex3f(-s,-s,s); glVertex3f(s,-s,s); glVertex3f(s,s,s); glVertex3f(-s,s,s);
 
-        glColor3f(0.10f, 0.45f, 0.80f);
+        glColor3f(r*0.50f,g*0.50f,b*0.50f);
         glVertex3f(s,-s,-s); glVertex3f(-s,-s,-s); glVertex3f(-s,s,-s); glVertex3f(s,s,-s);
 
-        glColor3f(0.12f, 0.55f, 0.90f);
+        glColor3f(r*0.60f,g*0.60f,b*0.60f);
         glVertex3f(-s,-s,-s); glVertex3f(-s,-s,s); glVertex3f(-s,s,s); glVertex3f(-s,s,-s);
 
-        glColor3f(0.20f, 0.75f, 1.0f);
+        glColor3f(r*0.82f,g*0.82f,b*0.82f);
         glVertex3f(s,-s,s); glVertex3f(s,-s,-s); glVertex3f(s,s,-s); glVertex3f(s,s,s);
 
-        glColor3f(0.30f, 0.85f, 1.0f);
+        glColor3f(r,g,b);
         glVertex3f(-s,s,s); glVertex3f(s,s,s); glVertex3f(s,s,-s); glVertex3f(-s,s,-s);
 
-        glColor3f(0.08f, 0.35f, 0.65f);
+        glColor3f(r*0.38f,g*0.38f,b*0.38f);
         glVertex3f(-s,-s,-s); glVertex3f(s,-s,-s); glVertex3f(s,-s,s); glVertex3f(-s,-s,s);
 
         glEnd();
@@ -131,7 +131,7 @@ public:
         camera_pitch_ = pitch; camera_yaw_ = yaw; camera_roll_ = roll;
     }
 
-    bool key_held(int key_code) const override {
+    void mouse_state(float& x,float& y,int& buttons) const override { x=(float)last_mouse_x_; y=(float)last_mouse_y_; buttons=((GetAsyncKeyState(VK_LBUTTON)&0x8000)?1:0)|((GetAsyncKeyState(VK_RBUTTON)&0x8000)?2:0)|((GetAsyncKeyState(VK_MBUTTON)&0x8000)?4:0); }\n\n    bool key_held(int key_code) const override {
         if (key_code < 0 || key_code > 255) return false;
         return (GetAsyncKeyState(key_code) & 0x8000) != 0;
     }
