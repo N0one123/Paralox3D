@@ -46,7 +46,10 @@ void p3d_entity_set_position(P3DEngine* engine, uint32_t entity,
 }
 
 void p3d_entity_set_rotation(P3DEngine* engine,uint32_t entity,float pitch,float yaw,float roll){ if(!engine||!entity||entity>engine->transforms.size())return; auto& t=engine->transforms[entity-1];t.pitch=pitch;t.yaw=yaw;t.roll=roll; }
-void p3d_entity_set_color(P3DEngine* engine,uint32_t entity,float r,float g,float b,float a){ if(!engine||!entity||entity>engine->transforms.size())return; auto& t=engine->transforms[entity-1];t.r=r;t.g=g;t.b=b;t.a=a; }\nvoid p3d_entity_set_enabled(P3DEngine* engine,uint32_t entity,int enabled,int visible){ if(!engine||!entity||entity>engine->transforms.size())return; auto& t=engine->transforms[entity-1];t.enabled=enabled!=0;t.visible=visible!=0; }\nvoid p3d_mouse_state(P3DEngine* engine,float* x,float* y,int* buttons){ if(!engine||!engine->renderer)return;engine->renderer->mouse_state(*x,*y,*buttons); }\nvoid p3d_entity_set_scale(P3DEngine* engine, uint32_t entity, float x, float y, float z) {
+void p3d_entity_set_color(P3DEngine* engine,uint32_t entity,float r,float g,float b,float a){ if(!engine||!entity||entity>engine->transforms.size())return; auto& t=engine->transforms[entity-1];t.r=r;t.g=g;t.b=b;t.a=a; }
+void p3d_entity_set_enabled(P3DEngine* engine,uint32_t entity,int enabled,int visible){ if(!engine||!entity||entity>engine->transforms.size())return; auto& t=engine->transforms[entity-1];t.enabled=enabled!=0;t.visible=visible!=0; }
+void p3d_mouse_state(P3DEngine* engine,float* x,float* y,int* buttons){ if(!engine||!engine->renderer)return;engine->renderer->mouse_state(*x,*y,*buttons); }
+void p3d_entity_set_scale(P3DEngine* engine, uint32_t entity, float x, float y, float z) {
     if (!engine || entity == 0 || entity > engine->transforms.size()) return;
     auto& t = engine->transforms[entity - 1];
     t.sx=x; t.sy=y; t.sz=z;
