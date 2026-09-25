@@ -131,7 +131,9 @@ public:
         camera_pitch_ = pitch; camera_yaw_ = yaw; camera_roll_ = roll;
     }
 
-    void mouse_state(float& x,float& y,int& buttons) const override { x=(float)last_mouse_x_; y=(float)last_mouse_y_; buttons=((GetAsyncKeyState(VK_LBUTTON)&0x8000)?1:0)|((GetAsyncKeyState(VK_RBUTTON)&0x8000)?2:0)|((GetAsyncKeyState(VK_MBUTTON)&0x8000)?4:0); }\n\n    bool key_held(int key_code) const override {
+    void mouse_state(float& x,float& y,int& buttons) const override { x=(float)last_mouse_x_; y=(float)last_mouse_y_; buttons=((GetAsyncKeyState(VK_LBUTTON)&0x8000)?1:0)|((GetAsyncKeyState(VK_RBUTTON)&0x8000)?2:0)|((GetAsyncKeyState(VK_MBUTTON)&0x8000)?4:0); }
+
+    bool key_held(int key_code) const override {
         if (key_code < 0 || key_code > 255) return false;
         return (GetAsyncKeyState(key_code) & 0x8000) != 0;
     }
