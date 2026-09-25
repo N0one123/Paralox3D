@@ -69,6 +69,15 @@ class Engine:
         self._native.p3d_entity_set_scale.argtypes = [ctypes.c_void_p, ctypes.c_uint32, ctypes.c_float, ctypes.c_float, ctypes.c_float]
         self._native.p3d_entity_set_scale.restype = None
 
+        self._native.p3d_entity_set_rotation.argtypes=[ctypes.c_void_p,ctypes.c_uint32,ctypes.c_float,ctypes.c_float,ctypes.c_float]
+        self._native.p3d_entity_set_rotation.restype=None
+        self._native.p3d_entity_set_color.argtypes=[ctypes.c_void_p,ctypes.c_uint32,ctypes.c_float,ctypes.c_float,ctypes.c_float,ctypes.c_float]
+        self._native.p3d_entity_set_color.restype=None
+        self._native.p3d_entity_set_enabled.argtypes=[ctypes.c_void_p,ctypes.c_uint32,ctypes.c_int,ctypes.c_int]
+        self._native.p3d_entity_set_enabled.restype=None
+        self._native.p3d_mouse_state.argtypes=[ctypes.c_void_p,ctypes.POINTER(ctypes.c_float),ctypes.POINTER(ctypes.c_float),ctypes.POINTER(ctypes.c_int)]
+        self._native.p3d_mouse_state.restype=None
+
         self._native.p3d_input_key_held.argtypes = [
             ctypes.c_void_p, ctypes.c_int
         ]
