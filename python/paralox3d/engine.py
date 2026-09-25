@@ -7,7 +7,9 @@ from .clock import _set_dt
 from .input import _default_input
 from .native import load
 from .modes import modes
-from .camera import camera\nfrom .input import mouse\nfrom .timing import update as _update_timers
+from .camera import camera
+from .input import mouse
+from .timing import update as _update_timers
 
 _default_engine = None
 
