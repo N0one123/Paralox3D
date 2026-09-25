@@ -1,250 +1,168 @@
 <!doctype html>
 <html lang="en">
 <head>
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <meta name="description" content="Beginner-friendly documentation for Paralox3D, a simple Python 3D engine with a powerful native core.">
-  <title>Paralox3D Documentation</title>
-  <link rel="icon" type="image/png" href="assets/logo_main.png">
-  <link rel="stylesheet" href="style.css">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="description" content="Paralox3D 0.1.1 documentation">
+<title>Paralox3D 0.1.1 Documentation</title>
+<link rel="icon" type="image/png" href="assets/logo_main.png">
+<link rel="stylesheet" href="style.css">
 </head>
 <body>
-  <header class="topbar">
-    <a class="brand" href="#top">Paralox3D</a>
-    <button class="menu-button" aria-label="Toggle navigation" aria-expanded="false">Menu</button>
-    <nav id="nav">
-      <a href="#installation">Installation</a>
-      <a href="#basics">Basics</a>
-      <a href="#camera">Camera</a>
-      <a href="#input">Input</a>
-      <a href="#collision">Collision</a>
-      <a href="#components">Components</a>
-      <a href="#scenes">Scenes</a>
-      <a href="#developer">Developer mode</a>
-      <a href="#api">API</a>
-    </nav>
-  </header>
+<header class="topbar">
+<a class="brand" href="#top">Paralox3D</a>
+<button class="menu-button" aria-label="Toggle navigation" aria-expanded="false">Menu</button>
+<nav id="nav">
+<a href="#installation">Installation</a><a href="#basics">Basics</a><a href="#appearance">Appearance</a><a href="#camera">Camera</a><a href="#input">Input</a><a href="#collision">Collision</a><a href="#timers">Timers</a><a href="#components">Components</a><a href="#scenes">Scenes</a><a href="#developer">Developer</a><a href="#api">API</a>
+</nav>
+</header>
+<main id="top">
+<section class="hero">
+<p class="eyebrow">Paralox3D 0.1.1</p>
+<h1>Simple to start.<br>Powerful when you need it.</h1>
+<p class="lead">A low-boilerplate Python 3D engine with a native core, reactive object state, input, camera controls, collision queries, timers, scenes, components, and a growing visual API.</p>
+<div class="hero-actions"><a class="button primary" href="#installation">Get started</a><a class="button" href="https://github.com/N0one123/Paralox3D">View source</a></div>
+</section>
+<div class="layout">
+<aside class="sidebar"><strong>On this page</strong><a href="#installation">Installation</a><a href="#first-game">First game</a><a href="#objects">Objects</a><a href="#transforms">Transforms</a><a href="#appearance">Appearance & colors</a><a href="#game-loop">Game loop & dt</a><a href="#camera">Camera</a><a href="#input">Input & mouse</a><a href="#collision">Collision & casts</a><a href="#timers">Timers</a><a href="#components">Components</a><a href="#scenes">Scenes</a><a href="#developer">Developer mode</a><a href="#api">API reference</a></aside>
+<article class="content">
+<section id="installation"><h2>Installation</h2><p>Install the Python package with:</p><pre><code>python -m pip install paralox3d</code></pre><p>For a source checkout, build the native core with:</p><pre><code>python -m paralox3d build</code></pre><div class="note"><strong>0.1.1:</strong> This page documents the expanded 0.1.1 API. The native core is still early-development and platform support continues to grow.</div></section>
 
-  <main id="top">
-    <section class="hero">
-      <p class="eyebrow">Python 3D engine</p>
-      <h1>Simple to start.<br>Powerful when you need it.</h1>
-      <p class="lead">Paralox3D is built for beginners who want to make a 3D game without learning a giant engine first — while still giving you direct control over things like transforms, colliders, scenes, input, and the native renderer.</p>
-      <div class="hero-actions">
-        <a class="button primary" href="#installation">Get started</a>
-        <a class="button" href="https://github.com/N0one123/Paralox3D">View source</a>
-      </div>
-    </section>
-
-    <div class="layout">
-      <aside class="sidebar">
-        <strong>On this page</strong>
-        <a href="#installation">Installation</a>
-        <a href="#first-game">Your first game</a>
-        <a href="#objects">Objects</a>
-        <a href="#transforms">Transforms</a>
-        <a href="#game-loop">Game loop</a>
-        <a href="#camera">Camera</a>
-        <a href="#input">Input</a>
-        <a href="#collision">Collision</a>
-        <a href="#components">Components</a>
-        <a href="#scenes">Scenes</a>
-        <a href="#developer">Developer mode</a>
-        <a href="#api">API reference</a>
-      </aside>
-
-      <article class="content">
-        <section id="installation">
-          <h2>Installation</h2>
-          <p>Paralox3D is available on PyPI. For a normal installation, use:</p>
-          <pre><code>python -m pip install paralox3d</code></pre>
-          <p>Then create a Python file and import the engine:</p>
-          <pre><code>from paralox3d import *</code></pre>
-          <div class="note"><strong>0.1.0:</strong> This documentation describes the public API shipped with Paralox3D 0.1.0. Some parts of the engine are intentionally still early-development features.</div>
-        </section>
-
-        <section id="first-game">
-          <h2>Your first game</h2>
-          <p>The smallest useful Paralox3D program can be very small:</p>
-          <pre><code>from paralox3d import *
+<section id="first-game"><h2>Your first game</h2><pre><code>from paralox3d import *
 
 cube = Object("cube", position=(0, 0, -5))
+cube.color = electric_blue
 
 def update():
-    cube.x += 0.5 * dt
+    cube.rotation.y += 60 * dt
 
-start()</code></pre>
-          <p>That is the basic idea: create your objects, write what should happen every frame in <code>update()</code>, then call <code>start()</code>. Paralox3D handles the main loop for you.</p>
-        </section>
+start()</code></pre><p>Create objects, put per-frame behaviour in <code>update()</code>, and call <code>start()</code>. The default engine context and loop are handled for you.</p></section>
 
-        <section id="basics">
-          <h2>Basics</h2>
-          <p>Paralox3D deliberately keeps common game code close to plain Python. An <code>Object</code> represents something in your 3D world, and its properties describe where it is and how it looks.</p>
-
-          <h3 id="objects">Objects</h3>
-          <pre><code>player = Object(
-    "cube",
-    position=(0, 1, 0),
-    scale=(1, 2, 1),
-    name="Player"
-)</code></pre>
-          <p>The first argument is the shape. In 0.1.0, the native renderer provides the basic cube primitive. Position, scale, and name can be supplied when the object is created.</p>
-
-          <h3 id="transforms">Transforms</h3>
-          <p>You can work with a complete vector or change individual axes. The same style is used for position, rotation, and scale.</p>
-          <pre><code>cube.position = (2, 1, -5)
+<section id="basics"><h2>Basics</h2><h3 id="objects">Objects</h3><pre><code>player = Object("cube", position=(0, 1, 0), scale=(1, 2, 1), name="Player")</code></pre><p>The first argument is the model/primitive name. The current native renderer provides a cube primitive. Objects expose their model, name, transforms, collider, tags, components, appearance, and lifecycle state.</p>
+<h3 id="transforms">Transforms</h3><pre><code>cube.position = (2, 1, -5)
 cube.x = 3
 cube.y += 1
-
 cube.rotation = (0, 45, 0)
-
 cube.scale = (2, 1, 2)
-cube.scale.x = 3</code></pre>
-          <p>This is intentionally flexible: use whichever form makes your game code easier to understand.</p>
 
-          <h3 id="game-loop">Game loop and <code>dt</code></h3>
-          <p><code>update()</code> is called once per frame. You do not need to pass a delta-time argument to it. Import <code>dt</code> and use it directly when movement should be frame-rate independent.</p>
-          <pre><code>from paralox3d import *
+cube.move(1, 0, 0)
+cube.rotate(0, 15, 0)
+cube.scale_by(2)</code></pre><p>Transform vectors are <code>Vec3</code> values. Parent-child hierarchy supports local transforms as well as world transforms.</p>
+<pre><code>parent = Object("cube", position=(0, 2, 0))
+child = Object("cube", position=(2, 0, 0), parent=parent)
 
-player = Object("cube", position=(0, 0, -5))
-speed = 4
-
+child.local_position
+child.local_rotation
+child.local_scale
+child.parent
+parent.children</code></pre>
+<p>Useful direction and targeting helpers include <code>forward</code>, <code>right</code>, <code>up</code>, <code>look_at()</code>, <code>distance_to()</code>, <code>move_forward()</code>, <code>move_right()</code>, and <code>move_up()</code>.</p>
+<h3 id="game-loop">Game loop and <code>dt</code></h3><p><code>update()</code> is called every frame. You do not pass <code>dt</code> into it. Import the global <code>dt</code> and use it directly.</p><pre><code>speed = 5
 def update():
-    player.x += speed * dt
+    player.x += speed * dt</code></pre><p><code>dt</code> is the elapsed time since the previous frame, allowing frame-rate-independent movement.</p></section>
 
-start()</code></pre>
-          <p><code>dt</code> represents the time since the previous frame. Multiplying movement by <code>dt</code> means the movement is based on elapsed time rather than simply on how many frames the computer happens to draw.</p>
-        </section>
+<section id="appearance"><h2>Appearance, visibility, and colors</h2><p>Visual state is reactive: changing a property immediately pushes the state to the native renderer.</p><pre><code>cube.rotation = (0, 45, 0)
+cube.color = hot_pink
+cube.opacity = 0.8
+cube.visible = True
+cube.enabled = True</code></pre><p><code>color</code> accepts an RGB tuple with values in the 0..1 range. Named colors are exported directly from <code>paralox3d</code>.</p><pre><code>cube.color = red
+cube.color = gold
+cube.color = electric_blue
+cube.color = neon_green
+cube.color = hot_pink
+cube.color = lavender</code></pre><p>The 0.1.1 palette includes basic, light/dark, CSS-inspired, and game-friendly names such as <code>red</code>, <code>crimson</code>, <code>orange</code>, <code>gold</code>, <code>yellow</code>, <code>lime</code>, <code>green</code>, <code>emerald</code>, <code>teal</code>, <code>cyan</code>, <code>sky_blue</code>, <code>blue</code>, <code>navy</code>, <code>purple</code>, <code>violet</code>, <code>indigo</code>, <code>magenta</code>, <code>pink</code>, <code>hot_pink</code>, <code>brown</code>, <code>white</code>, <code>gray</code>, <code>black</code>, plus <code>electric_blue</code>, <code>neon_blue</code>, <code>neon_green</code>, <code>neon_pink</code>, <code>neon_purple</code>, <code>neon_yellow</code>, <code>neon_orange</code>, <code>fire</code>, <code>poison</code>, and <code>energy</code>.</p><p><code>opacity</code> is stored as part of object visual state; actual native blending support is still evolving.</p></section>
 
-        <section id="camera">
-          <h2>Camera</h2>
-          <p>The built-in camera gives you a simple starting point while still exposing its position and rotation for more controlled setups.</p>
-          <pre><code>modes.camera = True
-
+<section id="camera"><h2>Camera</h2><pre><code>modes.camera = True
 camera.position = (0, 2, 8)
-camera.look_at((0, 0, 0))</code></pre>
+camera.look_at((0, 0, 0))</code></pre><p>The camera exposes <code>x</code>, <code>y</code>, <code>z</code>, <code>position</code>, <code>pitch</code>, <code>yaw</code>, and <code>roll</code>. <code>look_at()</code> accepts a position or vector-like target.</p><p>Native camera controls support mouse interaction: left-drag rotates the camera and right-drag pans it when camera mode is enabled.</p></section>
 
-          <h3>Position and rotation</h3>
-          <pre><code>camera.x = 0
-camera.y = 2
-camera.z = 8
-
-camera.pitch = -10
-camera.yaw = 0
-camera.roll = 0</code></pre>
-          <p>You can also assign <code>camera.position</code> and <code>camera.rotation</code> as three-value tuples.</p>
-
-          <h3><code>look_at()</code></h3>
-          <p>Instead of calculating camera angles yourself, point the camera at a target:</p>
-          <pre><code>camera.look_at((0, 0, 0))</code></pre>
-          <p>The target can be a three-value position or a <code>Vec3</code>-like object.</p>
-
-          <h3>Mouse controls</h3>
-          <p>With camera mode enabled, the built-in native camera supports mouse controls. Left-drag rotates the camera. Right-drag pans it. The native camera movement is kept separate from ordinary Python transform updates so the controls remain responsive.</p>
-        </section>
-
-        <section id="input">
-          <h2>Input</h2>
-          <p>Input helpers are designed to read naturally inside <code>update()</code>.</p>
-          <pre><code>if key("space"):
-    print("Space is down")
-
-if held("w"):
+<section id="input"><h2>Input</h2><pre><code>if held("w"):
     player.z -= 5 * dt
 
-if pressed("escape"):
-    print("Escape was pressed")</code></pre>
-          <p><code>key()</code> checks the current key state, <code>held()</code> is for a key being held, and <code>pressed()</code> is for a press event. Keyboard names include letters, digits, common control keys, and the arrow keys.</p>
-        </section>
+if pressed("space"):
+    print("Jump!")
 
-        <section id="collision">
-          <h2>Collision</h2>
-          <p>Collision is intentionally simple at the surface, but it is not locked down. Every <code>Object</code> has a configurable <code>collider</code> you can inspect and change.</p>
+bind("move_left", "a")
+bind("move_right", "d")
+if action("move_left"):
+    player.x -= 4 * dt
+if action_pressed("jump"):
+    player.y += 1</code></pre><p>Use <code>key()</code>, <code>held()</code>, <code>any_held()</code>, and <code>pressed()</code> for direct keyboard state. Actions map a named action to one or more keys.</p><h3>Mouse</h3><pre><code>print(mouse.position)
+print(mouse.dx, mouse.dy)
 
-          <h3>Basic collision check</h3>
-          <pre><code>if Collision(player, wall):
-    print("Player hit the wall")</code></pre>
+if mouse.left:
+    print("Left mouse held")
 
-          <h3>Find everything touching an object</h3>
-          <pre><code>hits = Collision(player)
+if mouse.pressed("left"):
+    print("Left mouse pressed")</code></pre><p>Mouse state includes position, per-frame movement deltas, button held state, and button press events. The engine synchronizes it before your <code>update()</code> callback.</p></section>
 
-for other in hits:
-    print("Touching:", other.name)</code></pre>
-
-          <h3>Control the collider</h3>
-          <pre><code>player.collider.size = (0.8, 1.8, 0.8)
+<section id="collision"><h2>Collision and spatial queries</h2><p>Objects receive a default <code>Collider</code>. Colliders use axis-aligned bounding boxes and expose size, offset, enabled state, trigger state, layer, and collision masks.</p><pre><code>player.collider.size = (1, 2, 1)
 player.collider.offset = (0, 0.1, 0)
+player.collider.enabled = True
+player.collider.is_trigger = True
+player.collider.layer = "player"
+player.collider.collides_with = {"enemy", "ground"}</code></pre><pre><code>if Collision(player, wall):
+    print("Hit!")
 
-player.collider.enabled = False</code></pre>
-          <p>The default collider follows the object's scale. You can replace its size, move it with an offset, or disable it when your game needs different behaviour.</p>
-          <div class="note"><strong>How it works in 0.1.0:</strong> the built-in collider uses axis-aligned bounding boxes (AABBs). It is a practical starting point for simple games, while the exposed collider properties leave room for more controlled gameplay code.</div>
-        </section>
+for other in Collision(player):
+    print("Touching:", other.name)</code></pre><h3>Raycasts and casts</h3><pre><code>hit = raycast((0, 1, 5), (0, 0, -1), distance=20)
+hit = boxcast((0, 1, 5), (1, 1, 1), (0, 0, -1), distance=20)
+hit = spherecast((0, 1, 5), 0.5, (0, 0, -1), distance=20)</code></pre><p>Cast results are <code>RaycastHit</code> objects with <code>object</code>, <code>point</code>, <code>normal</code>, and <code>distance</code>. Query helpers <code>overlap_box()</code> and <code>overlap_sphere()</code> return matching objects.</p><p>Use the optional <code>ignore</code> argument on casts and overlap queries to exclude objects.</p></section>
 
-        <section id="components">
-          <h2>Components</h2>
-          <p>Components provide a place for behaviour that you want to attach to an object rather than putting everything into one large game script.</p>
-          <pre><code>from paralox3d import Component, Script</code></pre>
-          <p><code>Component</code> is the base component type, and <code>Script</code> is the built-in script component. The component system is part of the 0.1.0 foundation and is intentionally small while the engine develops.</p>
-        </section>
+<section id="timers"><h2>Timers</h2><pre><code>after(2.0, lambda: print("Two seconds!"))
 
-        <section id="scenes">
-          <h2>Scenes</h2>
-          <p>Scenes are Paralox3D's way of keeping levels or worlds organised. Instead of rebuilding a collection of objects every time you change level, a scene gives that world a named home.</p>
-          <pre><code>from paralox3d import Scene, current_scene
+timer = every(1.0, lambda: print("Tick"))
+timer.cancel()
 
-level = Scene("Level 1")</code></pre>
-          <p>Scenes are a first-class part of the engine architecture. The 0.1.0 API is deliberately small here; more scene-management functionality can be added without changing the basic idea.</p>
-        </section>
+one_shot = Timer(3.0, callback=lambda: print("Done"))
+one_shot.reset()</code></pre><p>Timers are frame-driven. <code>after()</code> schedules a one-shot callback and <code>every()</code> schedules a repeating callback. Timers can be cancelled and reset.</p></section>
 
-        <section id="developer">
-          <h2>Developer mode</h2>
-          <p>When you are debugging a game, you can turn on developer mode:</p>
-          <pre><code>modes.developer = True</code></pre>
-          <p>Developer mode enables the engine's visual and diagnostic debugging tools. In 0.1.0 this includes the developer information overlay and visual collider bounds.</p>
-          <p>Turn it off when you want a normal presentation:</p>
-          <pre><code>modes.developer = False</code></pre>
-          <p>The important idea is that developer mode is a master switch for the engine's visual debug features, so you do not have to manage every debug display separately.</p>
-        </section>
+<section id="components"><h2>Components</h2><pre><code>from paralox3d import Component, Script
 
-        <section id="api">
-          <h2>API reference</h2>
-          <p>These are the main public pieces you are likely to use in a beginner project.</p>
-          <div class="api-grid">
-            <div class="api-card"><code>Object()</code><span>Create a 3D object.</span></div>
-            <div class="api-card"><code>start()</code><span>Start the automatic game loop.</span></div>
-            <div class="api-card"><code>dt</code><span>Time elapsed since the previous frame.</span></div>
-            <div class="api-card"><code>camera</code><span>Access the built-in camera.</span></div>
-            <div class="api-card"><code>modes.camera</code><span>Enable or disable native camera controls.</span></div>
-            <div class="api-card"><code>modes.developer</code><span>Enable or disable visual debugging.</span></div>
-            <div class="api-card"><code>key()</code><span>Read keyboard state.</span></div>
-            <div class="api-card"><code>held()</code><span>Check whether a key is held.</span></div>
-            <div class="api-card"><code>pressed()</code><span>Check for a key press.</span></div>
-            <div class="api-card"><code>Collision()</code><span>Check one or many object collisions.</span></div>
-            <div class="api-card"><code>Collider</code><span>Configure an object's collision box.</span></div>
-            <div class="api-card"><code>Vec3</code><span>Store three-dimensional values.</span></div>
-            <div class="api-card"><code>Component</code><span>Base type for object components.</span></div>
-            <div class="api-card"><code>Script</code><span>Built-in script component.</span></div>
-            <div class="api-card"><code>Scene</code><span>Represent a game world or level.</span></div>
-            <div class="api-card"><code>current_scene</code><span>Access the current scene.</span></div>
-          </div>
-        </section>
+class Health(Component):
+    def __init__(self):
+        self.value = 100
 
-        <section>
-          <h2>The Paralox3D approach</h2>
-          <p>Paralox3D is meant to sit in a useful middle ground: you should be able to make a first 3D program without fighting the engine, but the simple API should not stop you from taking control when your project grows.</p>
-          <p>For example, collision can start as one line — <code>Collision(player, wall)</code> — and then become as specific as you need by changing the collider's size, offset, and enabled state. The same philosophy applies throughout the engine: sensible defaults first, direct control when you need it.</p>
-        </section>
-      </article>
-    </div>
-  </main>
+player = Object("cube")
+health = player.add(Health())
+print(player.get(Health).value)</code></pre><p>Components attach behaviour or data to objects. The public API includes <code>Component</code>, <code>Script</code>, <code>FPSController</code>, and <code>CharacterController</code>. Components receive lifecycle/update calls through the engine.</p></section>
 
-  <a class="corner-logo" href="#top" aria-label="Back to top">
-    <img src="assets/logo_main.png" alt="">
-  </a>
+<section id="scenes"><h2>Scenes</h2><pre><code>scene = Scene("Level1")
+scene.create("cube", position=(0, 0, -5), name="Start")
+scene.create("cube", position=(2, 0, -5), name="Wall")
+scene.enter()
 
-  <footer>
-    <p>Paralox3D 0.1.0 · MIT License · <a href="https://github.com/N0one123/Paralox3D">GitHub</a></p>
-  </footer>
-  <script src="script.js"></script>
+scene.save("scenes/Level1.scene")
+loaded = Scene.load("scenes/Level1.scene")
+Scene.switch(loaded)</code></pre><p>Scenes support <code>add()</code>, <code>create()</code>, <code>enter()</code>, <code>exit()</code>, <code>clear()</code>, <code>save()</code>, <code>load()</code>, and <code>switch()</code>. Scene files use readable JSON. Objects can be marked <code>persistent = True</code> so they survive scene clearing.</p></section>
+
+<section id="developer"><h2>Developer mode</h2><pre><code>modes.developer = True</code></pre><p>Developer mode enables the diagnostic overlay and visual collider bounds. Disable it with <code>modes.developer = False</code>.</p></section>
+
+<section id="api"><h2>API reference</h2><div class="api-grid">
+<div class="api-card"><code>Object</code><span>3D entity with transforms, appearance, tags, hierarchy, collider, and components.</span></div>
+<div class="api-card"><code>Scene</code><span>World/level lifecycle and JSON persistence.</span></div>
+<div class="api-card"><code>Vec3</code><span>3D vector arithmetic, normalization, dot/cross, distance, and lerp.</span></div>
+<div class="api-card"><code>camera</code><span>Built-in camera and native mouse controls.</span></div>
+<div class="api-card"><code>mouse</code><span>Position, delta, buttons, and press events.</span></div>
+<div class="api-card"><code>bind/action</code><span>Named input actions.</span></div>
+<div class="api-card"><code>Collider</code><span>Configurable AABB collider.</span></div>
+<div class="api-card"><code>Collision</code><span>Pair or object overlap checks.</span></div>
+<div class="api-card"><code>raycast</code><span>Ray query returning RaycastHit.</span></div>
+<div class="api-card"><code>boxcast</code><span>Swept box query.</span></div>
+<div class="api-card"><code>spherecast</code><span>Swept sphere-style query.</span></div>
+<div class="api-card"><code>overlap_box</code><span>Box spatial overlap query.</span></div>
+<div class="api-card"><code>overlap_sphere</code><span>Sphere spatial overlap query.</span></div>
+<div class="api-card"><code>Timer/after/every</code><span>Frame-driven timing helpers.</span></div>
+<div class="api-card"><code>Component/Script</code><span>Reusable object behaviour.</span></div>
+<div class="api-card"><code>find/find_all/find_with_tag</code><span>Object lookup helpers.</span></div>
+<div class="api-card"><code>modes.developer</code><span>Diagnostic rendering and collider visuals.</span></div>
+<div class="api-card"><code>modes.camera</code><span>Native camera controls.</span></div>
+</div></section>
+
+<section><h2>0.1.1 approach</h2><p>0.1.1 is an API expansion milestone. The goal is to make common game development tasks — movement, input, timing, object state, hierarchy, collision, spatial queries, scenes, and debugging — available through small Python calls while keeping performance-critical work in the native layer.</p><p>Lighting remains intentionally postponed so the renderer can evolve without assuming expensive lighting is suitable for older hardware.</p></section>
+</article></div></main>
+<a class="corner-logo" href="#top" aria-label="Back to top"><img src="assets/logo_main.png" alt=""></a>
+<footer><p>Paralox3D 0.1.1 · MIT License · <a href="https://github.com/N0one123/Paralox3D">GitHub</a></p></footer>
+<script src="script.js"></script>
 </body>
 </html>
