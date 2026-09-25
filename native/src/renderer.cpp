@@ -91,6 +91,9 @@ public:
         const float s = 0.5f;
         glPushMatrix();
         glTranslatef(x, y, z);
+        glRotatef(yaw, 0.0f, 1.0f, 0.0f);
+        glRotatef(pitch, 1.0f, 0.0f, 0.0f);
+        glRotatef(roll, 0.0f, 0.0f, 1.0f);
         glScalef(sx, sy, sz);
         glBegin(GL_QUADS);
 
