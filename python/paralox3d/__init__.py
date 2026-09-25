@@ -10,7 +10,8 @@ from .clock import dt
 from .camera import camera,Camera
 from .collision import Collider,Collision,raycast,boxcast,spherecast,overlap_box,overlap_sphere,RaycastHit
 from .timing import Timer,after,every,cancel
+from .colors import *
 def find(name):return next((o for o in get_default_engine()._objects if o.name==name),None)
 def find_all(name):return [o for o in get_default_engine()._objects if o.name==name]
 def find_with_tag(tag):return [o for o in get_default_engine()._objects if tag in o.tags]
-__all__=["Engine","start","get_default_engine","Object","Entity","Vec3","Scene","current_scene","Component","Script","FPSController","CharacterController","key","held","any_held","pressed","bind","action","action_pressed","mouse","modes","dt","camera","Camera","Collider","Collision","raycast","boxcast","spherecast","overlap_box","overlap_sphere","RaycastHit","Timer","after","every","cancel","find","find_all","find_with_tag"]
+__all__=["Engine","start","get_default_engine","Object","Entity","Vec3","Scene","current_scene","Component","Script","FPSController","CharacterController","key","held","any_held","pressed","bind","action","action_pressed","mouse","modes","dt","camera","Camera","Collider","Collision","raycast","boxcast","spherecast","overlap_box","overlap_sphere","RaycastHit","Timer","after","every","cancel","find","find_all","find_with_tag"] + [name for name in globals() if not name.startswith("_") and name not in {"Engine","Object","Entity","Vec3","Scene","current_scene","Component","Script","FPSController","CharacterController","key","held","any_held","pressed","bind","action","action_pressed","mouse","modes","dt","camera","Camera","Collider","Collision","raycast","boxcast","spherecast","overlap_box","overlap_sphere","RaycastHit","Timer","after","every","cancel","find","find_all","find_with_tag"}]

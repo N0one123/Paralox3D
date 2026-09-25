@@ -223,6 +223,24 @@ class Engine:
                 )
             )
 
+            # Keep mouse position/delta/buttons in sync before user update().
+            mx = ctypes.c_float()
+            my = ctypes.c_float()
+            buttons = ctypes.c_int()
+            self._native.p3d_mouse_state(
+                engine_ptr,
+                ctypes.byref(mx),
+                ctypes.byref(my),
+                ctypes.byref(buttons),
+            )
+            mouse._sync((
+                mx.value,
+                my.value,
+                bool(buttons.value & 1),
+                bool(buttons.value & 2),
+                bool(buttons.value & 4),
+            ))
+
             self.update()
             _default_input._end_frame()
 
