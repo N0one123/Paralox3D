@@ -89,7 +89,14 @@ class Object:
         self.parent=parent
         if parent and self not in parent._children:parent._children.append(self)
         self._recompute_world();return self
-    def detach(self):return self.set_parent(None)\n    @property\n    def children(self):return tuple(self._children)\n    @property\n    def components(self):return tuple(self._components)\n    def add_tag(self,tag):self.tags.add(str(tag));return self\n    def remove_tag(self,tag):self.tags.discard(str(tag));return self\n    def has_tag(self,tag):return str(tag) in self.tags
+    def detach(self):return self.set_parent(None)
+    @property
+    def children(self):return tuple(self._children)
+    @property
+    def components(self):return tuple(self._components)
+    def add_tag(self,tag):self.tags.add(str(tag));return self
+    def remove_tag(self,tag):self.tags.discard(str(tag));return self
+    def has_tag(self,tag):return str(tag) in self.tags
     def move(self,x=0,y=0,z=0):return self.translate(x,y,z)
     def translate(self,x=0,y=0,z=0):self._local_position=self._local_position+Vec3(x,y,z);self._recompute_world();return self
     def rotate(self,x=0,y=0,z=0):self._local_rotation=self._local_rotation+Vec3(x,y,z);self._recompute_world();return self
