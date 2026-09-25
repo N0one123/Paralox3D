@@ -188,6 +188,7 @@ class Engine:
             frame_dt = now - previous
             previous = now
             _set_dt(frame_dt)
+            _update_timers(frame_dt)
 
             if frame_dt > 0:
                 instant_fps = 1.0 / frame_dt
