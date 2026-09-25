@@ -5,10 +5,10 @@ public:
     virtual ~Renderer() = default;
     virtual bool create(int width, int height, const char* title) = 0;
     virtual bool begin_frame() = 0;
-    virtual void draw_cube(float x, float y, float z, float sx, float sy, float sz) = 0;
+    virtual void draw_cube(float x,float y,float z,float sx,float sy,float sz,float pitch,float yaw,float roll,float r,float g,float b,float a,bool visible)=0;
     virtual void end_frame() = 0;
     virtual bool running() const = 0;
-    virtual bool key_held(int key_code) const = 0;
+    virtual bool key_held(int key_code) const = 0;\n    virtual void mouse_state(float& x,float& y,int& buttons) const = 0;
     virtual void camera_set_enabled(bool enabled) = 0;
     virtual void camera_set_transform(float x, float y, float z, float pitch, float yaw, float roll) = 0;
     virtual void set_developer_overlay(bool enabled, int object_count, float fps,
