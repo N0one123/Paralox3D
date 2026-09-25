@@ -45,7 +45,8 @@ void p3d_entity_set_position(P3DEngine* engine, uint32_t entity,
     t.x=x; t.y=y; t.z=z;
 }
 
-void p3d_entity_set_rotation(P3DEngine* engine,uint32_t entity,float pitch,float yaw,float roll){ if(!engine||!entity||entity>engine->transforms.size())return; auto& t=engine->transforms[entity-1];t.pitch=pitch;t.yaw=yaw;t.roll=roll; }\nvoid p3d_entity_set_color(P3DEngine* engine,uint32_t entity,float r,float g,float b,float a){ if(!engine||!entity||entity>engine->transforms.size())return; auto& t=engine->transforms[entity-1];t.r=r;t.g=g;t.b=b;t.a=a; }\nvoid p3d_entity_set_enabled(P3DEngine* engine,uint32_t entity,int enabled,int visible){ if(!engine||!entity||entity>engine->transforms.size())return; auto& t=engine->transforms[entity-1];t.enabled=enabled!=0;t.visible=visible!=0; }\nvoid p3d_mouse_state(P3DEngine* engine,float* x,float* y,int* buttons){ if(!engine||!engine->renderer)return;engine->renderer->mouse_state(*x,*y,*buttons); }\nvoid p3d_entity_set_scale(P3DEngine* engine, uint32_t entity, float x, float y, float z) {
+void p3d_entity_set_rotation(P3DEngine* engine,uint32_t entity,float pitch,float yaw,float roll){ if(!engine||!entity||entity>engine->transforms.size())return; auto& t=engine->transforms[entity-1];t.pitch=pitch;t.yaw=yaw;t.roll=roll; }
+void p3d_entity_set_color(P3DEngine* engine,uint32_t entity,float r,float g,float b,float a){ if(!engine||!entity||entity>engine->transforms.size())return; auto& t=engine->transforms[entity-1];t.r=r;t.g=g;t.b=b;t.a=a; }\nvoid p3d_entity_set_enabled(P3DEngine* engine,uint32_t entity,int enabled,int visible){ if(!engine||!entity||entity>engine->transforms.size())return; auto& t=engine->transforms[entity-1];t.enabled=enabled!=0;t.visible=visible!=0; }\nvoid p3d_mouse_state(P3DEngine* engine,float* x,float* y,int* buttons){ if(!engine||!engine->renderer)return;engine->renderer->mouse_state(*x,*y,*buttons); }\nvoid p3d_entity_set_scale(P3DEngine* engine, uint32_t entity, float x, float y, float z) {
     if (!engine || entity == 0 || entity > engine->transforms.size()) return;
     auto& t = engine->transforms[entity - 1];
     t.sx=x; t.sy=y; t.sz=z;
@@ -90,7 +91,7 @@ int p3d_engine_step(P3DEngine* engine) {
         return 0;
     }
     for (const auto& t : engine->transforms)
-        engine->renderer->draw_cube(t.x, t.y, t.z, t.sx, t.sy, t.sz);
+        engine->renderer->draw_cube(t.x,t.y,t.z,t.sx,t.sy,t.sz,t.pitch,t.yaw,t.roll,t.r,t.g,t.b,t.a,t.visible);
     engine->renderer->end_frame();
     engine->running = engine->renderer->running();
     return engine->running ? 1 : 0;
