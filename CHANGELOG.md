@@ -12,6 +12,11 @@ Highlights:
 - scene lifecycle and scene switching foundation
 - reusable components and controller helpers
 - expanded Vec3 math
+- frame timers and delayed/repeating callbacks
+- overlap queries and swept box/sphere query foundations
+- automatic collider resizing when an Object scale changes
+- native object rotation, color, visibility, and enabled state
+- native mouse position/button state
 - public API cleanup
 
 This release is an API expansion release. Native rendering features are kept intentionally conservative while the platform layer continues to grow.
