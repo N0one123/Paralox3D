@@ -13,7 +13,7 @@ def _rotate(v,r):
     return Vec3(x*cr-y2*sr,x*sr+y2*cr,z2)
 
 class Object:
-    __slots__=("__dict__","_engine","_handle","_model","_position","_rotation","_scale","_components","name","collider","parent","_children","enabled","visible","tags","persistent","_local_position","_local_rotation","_local_scale","color","texture","opacity")
+    __slots__=("__dict__","_engine","_handle","_model","_position","_rotation","_scale","_components","name","collider","parent","_children","_enabled","_visible","tags","persistent","_local_position","_local_rotation","_local_scale","_color","texture","_opacity")
     def __init__(self,model="cube",position=(0,0,0),rotation=(0,0,0),scale=(1,1,1),name=None,engine=None,scene=None,parent=None):
         from .engine import get_default_engine
         from .scene import current_scene
@@ -22,15 +22,33 @@ class Object:
         s=(scale,scale,scale) if isinstance(scale,(int,float)) else scale; self._local_scale=Vec3(*s)
         self._position=self._local_position.copy(); self._rotation=self._local_rotation.copy(); self._scale=self._local_scale.copy()
         self._components=[]; self.name=name or model; self.parent=None; self._children=[]
-        self.enabled=True; self.visible=True; self.tags=set(); self.persistent=False; self.color=(1.0,1.0,1.0); self.texture=None; self.opacity=1.0
+        self._enabled=True; self._visible=True; self.tags=set(); self.persistent=False; self._color=(1.0,1.0,1.0); self.texture=None; self._opacity=1.0
         self.collider=Collider(self); self._engine.register(self); self._push()
         if parent is not None:self.set_parent(parent)
         target=scene or current_scene()
         if target is not None:target.add(self)
     def _push(self):
         self._engine._set_position(self._handle,self._position); self._engine._set_rotation(self._handle,self._rotation); self._engine._set_scale(self._handle,self._scale)
-        if hasattr(self._engine,"_set_enabled"):self._engine._set_enabled(self._handle,self.enabled,self.visible)
-        if hasattr(self._engine,"_set_color"):self._engine._set_color(self._handle,*self.color,self.opacity)
+        if hasattr(self._engine,"_set_enabled"):self._engine._set_enabled(self._handle,self._enabled,self._visible)
+        if hasattr(self._engine,"_set_color"):self._engine._set_color(self._handle,*self._color,self._opacity)
+    @property
+    def enabled(self):return self._enabled
+    @enabled.setter
+    def enabled(self,v):self._enabled=bool(v);self._push()
+    @property
+    def visible(self):return self._visible
+    @visible.setter
+    def visible(self,v):self._visible=bool(v);self._push()
+    @property
+    def color(self):return self._color
+    @color.setter
+    def color(self,v):
+        if len(v)!=3:raise ValueError("color must be an RGB 3-tuple.")
+        self._color=tuple(max(0.0,min(1.0,float(x))) for x in v);self._push()
+    @property
+    def opacity(self):return self._opacity
+    @opacity.setter
+    def opacity(self,v):self._opacity=max(0.0,min(1.0,float(v)));self._push()
     @property
     def model(self):return self._model
     @property
