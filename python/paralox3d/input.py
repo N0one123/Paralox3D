@@ -17,17 +17,24 @@ class Input:
     def action_pressed(self,action):return any(self.pressed(k) for k in self._bindings.get(str(action),()))
     def _end_frame(self):self._pressed.clear()
 _default_input=Input()
-def held(*keys):return _default_input.held(*keys)
-def pressed(k):return _default_input.pressed(k)
-def key(k):return held(k)
-def bind(action,*keys):return _default_input.bind(action,*keys)
-def action(name):return _default_input.action_held(name)
-def action_pressed(name):return _default_input.action_pressed(name)
+held=lambda *keys:_default_input.held(*keys)
+any_held=lambda *keys:_default_input.any_held(*keys)
+pressed=lambda k:_default_input.pressed(k)
+key=lambda k:held(k)
+bind=lambda action,*keys:_default_input.bind(action,*keys)
+action=lambda name:_default_input.action_held(name)
+action_pressed=lambda name:_default_input.action_pressed(name)
 class Mouse:
-    x=property(lambda s:0);y=property(lambda s:0);position=property(lambda s:(0,0));dx=property(lambda s:0);dy=property(lambda s:0)
-    left=property(lambda s:False);right=property(lambda s:False);middle=property(lambda s:False)
-    def pressed(self,button):return False
-    def lock(self):pass
-    def unlock(self):pass
-    visible=True
+    def __init__(self):self._x=self._y=self._dx=self._dy=0.0;self._left=self._right=self._middle=False;self._pressed=set();self.visible=True;self.locked=False
+    x=property(lambda s:s._x);y=property(lambda s:s._y);position=property(lambda s:(s._x,s._y));dx=property(lambda s:s._dx);dy=property(lambda s:s._dy)
+    left=property(lambda s:s._left);right=property(lambda s:s._right);middle=property(lambda s:s._middle)
+    def pressed(self,b):return str(b).lower() in self._pressed
+    def _sync(self,state):
+        x,y,l,r,m=state;self._dx=x-self._x;self._dy=y-self._y;self._x=x;self._y=y
+        for n,d in (("left",l),("right",r),("middle",m)):
+            if d and not getattr(self,"_"+n):self._pressed.add(n)
+            setattr(self,"_"+n,d)
+    def _end_frame(self):self._pressed.clear();self._dx=0.0;self._dy=0.0
+    def lock(self):self.locked=True
+    def unlock(self):self.locked=False
 mouse=Mouse()
