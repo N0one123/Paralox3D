@@ -5,7 +5,7 @@
 #include <memory>
 #include <vector>
 
-struct Transform { float x=0.0f, y=0.0f, z=0.0f; float sx=1.0f, sy=1.0f, sz=1.0f; };
+struct Transform { float x=0.0f,y=0.0f,z=0.0f; float sx=1.0f,sy=1.0f,sz=1.0f; float pitch=0.0f,yaw=0.0f,roll=0.0f; float r=1.0f,g=1.0f,b=1.0f,a=1.0f; bool enabled=true,visible=true; };
 
 struct P3DEngine {
     int width=1280, height=720;
@@ -45,7 +45,7 @@ void p3d_entity_set_position(P3DEngine* engine, uint32_t entity,
     t.x=x; t.y=y; t.z=z;
 }
 
-void p3d_entity_set_scale(P3DEngine* engine, uint32_t entity, float x, float y, float z) {
+void p3d_entity_set_rotation(P3DEngine* engine,uint32_t entity,float pitch,float yaw,float roll){ if(!engine||!entity||entity>engine->transforms.size())return; auto& t=engine->transforms[entity-1];t.pitch=pitch;t.yaw=yaw;t.roll=roll; }\nvoid p3d_entity_set_color(P3DEngine* engine,uint32_t entity,float r,float g,float b,float a){ if(!engine||!entity||entity>engine->transforms.size())return; auto& t=engine->transforms[entity-1];t.r=r;t.g=g;t.b=b;t.a=a; }\nvoid p3d_entity_set_enabled(P3DEngine* engine,uint32_t entity,int enabled,int visible){ if(!engine||!entity||entity>engine->transforms.size())return; auto& t=engine->transforms[entity-1];t.enabled=enabled!=0;t.visible=visible!=0; }\nvoid p3d_mouse_state(P3DEngine* engine,float* x,float* y,int* buttons){ if(!engine||!engine->renderer)return;engine->renderer->mouse_state(*x,*y,*buttons); }\nvoid p3d_entity_set_scale(P3DEngine* engine, uint32_t entity, float x, float y, float z) {
     if (!engine || entity == 0 || entity > engine->transforms.size()) return;
     auto& t = engine->transforms[entity - 1];
     t.sx=x; t.sy=y; t.sz=z;
