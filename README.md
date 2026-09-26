@@ -40,11 +40,6 @@ def update():
     if action_pressed("jump"):
         print("Jump!")
 
-# Collision events
-player.on_enter = lambda other: print("Entered:", other.name)
-player.on_collision = lambda other: print("Touching:", other.name)
-player.on_exit = lambda other: print("Left:", other.name)
-
 start()
 ```
 
@@ -104,7 +99,7 @@ Spatial queries include:
 - `overlap_sphere(center, radius)`
 - Collision callbacks: `on_collision`, `on_enter`, and `on_exit` can be assigned to Objects.
 
-Each cast returns a `RaycastHit` containing `object`, `point`, `normal`, and `distance`, or `None`.
+Each cast returns a `RaycastHit` containing `object`, `point`, `normal`, and `distance`, or `None`.\n\nAssign collision callbacks directly to an Object for per-frame and enter/exit events:\n\n```python\nplayer.on_enter = lambda other: print("Entered:", other.name)\nplayer.on_collision = lambda other: print("Touching:", other.name)\nplayer.on_exit = lambda other: print("Left:", other.name)\n```
 
 ### Timers
 
