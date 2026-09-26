@@ -18,9 +18,10 @@ Paralox3D 0.1.1 is a major API expansion focused on making everyday game code ea
 - Direction helpers: `forward`, `right`, `up`.
 - Convenience methods: `move()`, `translate()`, `rotate()`, `scale_by()`, `look_at()`, `distance_to()`, `move_forward()`, `move_right()`, `move_up()`.
 - Object lifecycle: `enabled`, `visible`, `destroy()`.
-- Object lookup: `find()`, `find_all()`, `find_with_tag()`.
+- Object lookup: `find()`, `find_all()`, `find_with_tag()`, `find_by_id()`.
+- Stable per-engine Object IDs through `object.id`.
 - Tags with `add_tag()`, `remove_tag()`, and `has_tag()`.
-- Components and controller helpers.
+- Components and controller helpers with start, enable/disable, update, and destroy lifecycle hooks.
 - Expanded `Vec3` math.
 
 ### Input
@@ -38,6 +39,11 @@ def update():
 
     if action_pressed("jump"):
         print("Jump!")
+
+# Collision events
+player.on_enter = lambda other: print("Entered:", other.name)
+player.on_collision = lambda other: print("Touching:", other.name)
+player.on_exit = lambda other: print("Left:", other.name)
 
 start()
 ```
@@ -96,6 +102,7 @@ Spatial queries include:
 - `spherecast(center, radius, direction, distance=...)`
 - `overlap_box(center, size)`
 - `overlap_sphere(center, radius)`
+- Collision callbacks: `on_collision`, `on_enter`, and `on_exit` can be assigned to Objects.
 
 Each cast returns a `RaycastHit` containing `object`, `point`, `normal`, and `distance`, or `None`.
 
