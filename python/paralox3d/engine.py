@@ -10,6 +10,7 @@ from .modes import modes
 from .camera import camera
 from .input import mouse
 from .timing import update as _update_timers
+from .collision import _dispatch_collision_events
 
 _default_engine = None
 
@@ -29,6 +30,8 @@ class Engine:
         self.height = height
         self.max_fps = max_fps
         self._objects = []
+        self._object_id_counter = 0
+        self._collision_pairs = set()
         self._update_callback = None
         self._running = False
         self._camera_active = False
@@ -118,6 +121,10 @@ class Engine:
         ]
         self._native.p3d_camera_set_transform.restype = None
 
+    def _next_object_id(self):
+        self._object_id_counter += 1
+        return self._object_id_counter
+
     def _create_entity(self):
         return self._native.p3d_entity_create(self._engine)
 
@@ -144,6 +151,11 @@ class Engine:
         if obj not in self._objects:
             self._objects.append(obj)
         return obj
+
+    def unregister(self, obj):
+        if obj in self._objects:
+            self._objects.remove(obj)
+        self._collision_pairs={p for p in self._collision_pairs if obj.id not in p}
 
     def update(self):
         if self._update_callback:
@@ -242,6 +254,7 @@ class Engine:
             ))
 
             self.update()
+            _dispatch_collision_events(self)
             _default_input._end_frame()
 
             if self.max_fps:
