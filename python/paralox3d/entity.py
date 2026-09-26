@@ -13,8 +13,8 @@ def _rotate(v,r):
     return Vec3(x*cr-y2*sr,x*sr+y2*cr,z2)
 
 class Object:
-    __slots__=("__dict__","_id","_engine","_handle","_model","_position","_rotation","_scale","_components","name","collider","parent","_children","_enabled","_visible","tags","persistent","_local_position","_local_rotation","_local_scale","_color","texture","_opacity")
-    def __init__(self,model="cube",position=(0,0,0),rotation=(0,0,0),scale=(1,1,1),name=None,engine=None,scene=None,parent=None):
+    __slots__=("_Object__dict__","_id","_engine","_handle","_model","_position","_rotation","_scale","_components","name","collider","parent","_children","_enabled","_visible","tags","persistent","_local_position","_local_rotation","_local_scale","_color","texture","_opacity")
+    def __init__(self,model="cube",position=(0,0,0),rotation=(0,0,0),scale=(1,1,1),name=None,engine=None,scene=None,parent=None,color=None,opacity=1.0,texture=None,enabled=True,visible=True):
         from .engine import get_default_engine
         from .scene import current_scene
         self._engine=engine or get_default_engine(); self._id=self._engine._next_object_id(); self._handle=self._engine._create_entity()
@@ -22,7 +22,13 @@ class Object:
         s=(scale,scale,scale) if isinstance(scale,(int,float)) else scale; self._local_scale=Vec3(*s)
         self._position=self._local_position.copy(); self._rotation=self._local_rotation.copy(); self._scale=self._local_scale.copy()
         self._components=[]; self.name=name or model; self.parent=None; self._children=[]
-        self._enabled=True; self._visible=True; self.tags=set(); self.persistent=False; self._color=(1.0,1.0,1.0); self.texture=None; self._opacity=1.0
+        if color is None:
+            self._color=(1.0,1.0,1.0)
+        else:
+            if len(color)!=3: raise ValueError("color must be an RGB 3-tuple.")
+            self._color=tuple(max(0.0,min(1.0,float(x))) for x in color)
+        self.texture=texture; self._opacity=max(0.0,min(1.0,float(opacity))); self._enabled=bool(enabled); self._visible=bool(visible)
+        self.tags=set(); self.persistent=False
         self.collider=Collider(self); self._engine.register(self); self._push()
         if parent is not None:self.set_parent(parent)
         target=scene or current_scene()
