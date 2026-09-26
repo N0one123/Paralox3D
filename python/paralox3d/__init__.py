@@ -3,7 +3,7 @@ from .engine import Engine,start,get_default_engine
 from .entity import Object,Entity
 from .math import Vec3
 from .scene import Scene,current_scene
-from .components import Component,Script,FPSController,CharacterController
+from .components import Component,Script,FPSController,CharacterController,FPS
 from .input import key,held,any_held,pressed,bind,action,action_pressed,mouse
 from .modes import modes
 from .clock import dt
@@ -15,4 +15,4 @@ def find(name):return next((o for o in get_default_engine()._objects if o.name==
 def find_all(name):return [o for o in get_default_engine()._objects if o.name==name]
 def find_with_tag(tag):return [o for o in get_default_engine()._objects if tag in o.tags]
 def find_by_id(object_id):return next((o for o in get_default_engine()._objects if o.id==int(object_id)),None)
-__all__=["Engine","start","get_default_engine","Object","Entity","Vec3","Scene","current_scene","Component","Script","FPSController","CharacterController","key","held","any_held","pressed","bind","action","action_pressed","mouse","modes","dt","camera","Camera","Collider","Collision","raycast","boxcast","spherecast","overlap_box","overlap_sphere","RaycastHit","Timer","after","every","cancel","find","find_all","find_with_tag","find_by_id"] + [name for name in globals() if not name.startswith("_") and name not in {"Engine","Object","Entity","Vec3","Scene","current_scene","Component","Script","FPSController","CharacterController","key","held","any_held","pressed","bind","action","action_pressed","mouse","modes","dt","camera","Camera","Collider","Collision","raycast","boxcast","spherecast","overlap_box","overlap_sphere","RaycastHit","Timer","after","every","cancel","find","find_all","find_with_tag"}]
+__all__=["Engine","start","get_default_engine","Object","Entity","Vec3","Scene","current_scene","Component","Script","FPSController","CharacterController","FPS","key","held","any_held","pressed","bind","action","action_pressed","mouse","modes","dt","camera","Camera","Collider","Collision","raycast","boxcast","spherecast","overlap_box","overlap_sphere","RaycastHit","Timer","after","every","cancel","find","find_all","find_with_tag","find_by_id"] + [name for name in globals() if not name.startswith("_") and name not in {"Engine","Object","Entity","Vec3","Scene","current_scene","Component","Script","FPSController","CharacterController","FPS","key","held","any_held","pressed","bind","action","action_pressed","mouse","modes","dt","camera","Camera","Collider","Collision","raycast","boxcast","spherecast","overlap_box","overlap_sphere","RaycastHit","Timer","after","every","cancel","find","find_all","find_with_tag","find_by_id"}]
