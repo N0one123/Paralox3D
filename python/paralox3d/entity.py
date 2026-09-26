@@ -17,7 +17,7 @@ class Object:
     def __init__(self,model="cube",position=(0,0,0),rotation=(0,0,0),scale=(1,1,1),name=None,engine=None,scene=None,parent=None):
         from .engine import get_default_engine
         from .scene import current_scene
-        self._engine=engine or get_default_engine(); self._handle=self._engine._create_entity()
+        self._engine=engine or get_default_engine(); self._id=self._engine._next_object_id(); self._handle=self._engine._create_entity()
         self._model=model; self._local_position=Vec3(*position); self._local_rotation=Vec3(*rotation)
         s=(scale,scale,scale) if isinstance(scale,(int,float)) else scale; self._local_scale=Vec3(*s)
         self._position=self._local_position.copy(); self._rotation=self._local_rotation.copy(); self._scale=self._local_scale.copy()
@@ -31,6 +31,8 @@ class Object:
         self._engine._set_position(self._handle,self._position); self._engine._set_rotation(self._handle,self._rotation); self._engine._set_scale(self._handle,self._scale)
         if hasattr(self._engine,"_set_enabled"):self._engine._set_enabled(self._handle,self._enabled,self._visible)
         if hasattr(self._engine,"_set_color"):self._engine._set_color(self._handle,*self._color,self._opacity)
+    @property
+    def id(self):return self._id
     @property
     def enabled(self):return self._enabled
     @enabled.setter
@@ -132,6 +134,7 @@ class Object:
     def remove(self,component):
         if component in self._components:self._components.remove(component);component.on_destroy();component.owner=None
     def destroy(self):
+        if self not in self._engine._objects:return
         for c in tuple(self._children):c.destroy()
         if self.parent and self in self.parent._children:self.parent._children.remove(self)
         for c in tuple(self._components):c.on_destroy()
@@ -140,5 +143,5 @@ class Object:
         if self.enabled:
             for c in tuple(self._components):
                 if c.enabled:c.update()
-    def _serialize(self):return {"name":self.name,"model":self.model,"position":list(self.position),"rotation":list(self.rotation),"scale":list(self.scale),"tags":sorted(self.tags),"persistent":self.persistent}
+    def _serialize(self):return {"id":self.id,"name":self.name,"model":self.model,"position":list(self.position),"rotation":list(self.rotation),"scale":list(self.scale),"tags":sorted(self.tags),"persistent":self.persistent}
 Entity=Object
