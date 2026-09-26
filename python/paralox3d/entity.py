@@ -13,7 +13,7 @@ def _rotate(v,r):
     return Vec3(x*cr-y2*sr,x*sr+y2*cr,z2)
 
 class Object:
-    __slots__=("__dict__","_engine","_handle","_model","_position","_rotation","_scale","_components","name","collider","parent","_children","_enabled","_visible","tags","persistent","_local_position","_local_rotation","_local_scale","_color","texture","_opacity")
+    __slots__=("__dict__","_id","_engine","_handle","_model","_position","_rotation","_scale","_components","name","collider","parent","_children","_enabled","_visible","tags","persistent","_local_position","_local_rotation","_local_scale","_color","texture","_opacity")
     def __init__(self,model="cube",position=(0,0,0),rotation=(0,0,0),scale=(1,1,1),name=None,engine=None,scene=None,parent=None):
         from .engine import get_default_engine
         from .scene import current_scene
