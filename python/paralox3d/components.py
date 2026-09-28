@@ -367,12 +367,18 @@ class ControllerComponent(Component):
             return
 
         sx,sy=self.mouse_sensitivity
-        self._yaw+=mouse.dx*sx
+        # Native relative mouse X is opposite to the camera yaw direction
+        # expected by the FPS controller. Invert it so moving the mouse left
+        # turns the view left and moving it right turns the view right.
+        self._yaw-=mouse.dx*sx
         self._pitch-=mouse.dy*sy
         self._pitch=max(-90.0,min(90.0,self._pitch))
         self.owner.rotation=(0,self._yaw,0)
 
-        forward,right=self._vectors()
+        # Use the Object's own direction vectors so movement, body rotation,
+        # and the engine's rotation convention cannot drift apart.
+        forward=self.owner.forward
+        right=self.owner.right
         move=forward*((1 if held("w") else 0)-(1 if held("s") else 0))
         move=move+right*((1 if held("d") else 0)-(1 if held("a") else 0))
 
