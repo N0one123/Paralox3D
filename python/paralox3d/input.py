@@ -25,8 +25,8 @@ bind=lambda action,*keys:_default_input.bind(action,*keys)
 action=lambda name:_default_input.action_held(name)
 action_pressed=lambda name:_default_input.action_pressed(name)
 class Mouse:
-    def __init__(self):self._x=self._y=self._dx=self._dy=0.0;self._left=self._right=self._middle=False;self._pressed=set();self.visible=True;self.locked=False
-    x=property(lambda s:s._x);y=property(lambda s:s._y);position=property(lambda s:(s._x,s._y));dx=property(lambda s:s._dx);dy=property(lambda s:s._dy)
+    def __init__(self):self._x=self._y=self._dx=self._dy=0.0;self._left=self._right=self._middle=False;self._wheel=0.0;self._pressed=set();self.visible=True;self.locked=False
+    x=property(lambda s:s._x);y=property(lambda s:s._y);position=property(lambda s:(s._x,s._y));dx=property(lambda s:s._dx);dy=property(lambda s:s._dy);wheel=property(lambda s:s._wheel)
     left=property(lambda s:s._left);right=property(lambda s:s._right);middle=property(lambda s:s._middle)
     def pressed(self,b):return str(b).lower() in self._pressed
     def _sync(self,state):
@@ -34,12 +34,13 @@ class Mouse:
         for n,d in (("left",l),("right",r),("middle",m)):
             if d and not getattr(self,"_"+n):self._pressed.add(n)
             setattr(self,"_"+n,d)
+    def _sync_wheel(self, value):self._wheel=float(value)
     def _sync_relative(self,state):
         dx,dy,l,r,m=state;self._dx=float(dx);self._dy=float(dy)
         for n,d in (("left",l),("right",r),("middle",m)):
             if d and not getattr(self,"_"+n):self._pressed.add(n)
             setattr(self,"_"+n,d)
-    def _end_frame(self):self._pressed.clear();self._dx=0.0;self._dy=0.0
+    def _end_frame(self):self._pressed.clear();self._dx=0.0;self._dy=0.0;self._wheel=0.0
     def lock(self):self.locked=True
     def unlock(self):self.locked=False
 mouse=Mouse()
