@@ -140,6 +140,23 @@ public:
             y = static_cast<float>(relative_mouse_y_);
             relative_mouse_x_ = 0.0f;
             relative_mouse_y_ = 0.0f;
+
+            // Center-pointer FPS input, like Ursina's locked mouse.
+            // Move the OS cursor back to the center after reading movement,
+            // while resetting the baseline first so the synthetic mouse event
+            // created by SetCursorPos contributes zero movement.
+            RECT rect{};
+            if (GetClientRect(hwnd_, &rect)) {
+                POINT center{};
+                center.x = (rect.right - rect.left) / 2;
+                center.y = (rect.bottom - rect.top) / 2;
+                last_mouse_x_ = center.x;
+                last_mouse_y_ = center.y;
+
+                POINT screen = center;
+                ClientToScreen(hwnd_, &screen);
+                SetCursorPos(screen.x, screen.y);
+            }
         } else {
             x = static_cast<float>(last_mouse_x_);
             y = static_cast<float>(last_mouse_y_);
