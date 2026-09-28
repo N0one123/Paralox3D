@@ -70,18 +70,26 @@ class Engine:
         self._native.p3d_entity_set_position.restype = None
 
         self._native.p3d_entity_set_scale.argtypes = [ctypes.c_void_p, ctypes.c_uint32, ctypes.c_float, ctypes.c_float, ctypes.c_float]
+
         self._native.p3d_entity_set_scale.restype = None
 
-        self._native.p3d_entity_set_rotation.argtypes=[ctypes.c_void_p,ctypes.c_uint32,ctypes.c_float,ctypes.c_float,ctypes.c_float]
-        self._native.p3d_entity_set_rotation.restype=None
-        self._native.p3d_entity_set_color.argtypes=[ctypes.c_void_p,ctypes.c_uint32,ctypes.c_float,ctypes.c_float,ctypes.c_float,ctypes.c_float]
-        self._native.p3d_entity_set_color.restype=None
-        self._native.p3d_entity_set_enabled.argtypes=[ctypes.c_void_p,ctypes.c_uint32,ctypes.c_int,ctypes.c_int]
-        self._native.p3d_entity_set_enabled.restype=None
-        self._native.p3d_mouse_state.argtypes=[ctypes.c_void_p,ctypes.POINTER(ctypes.c_float),ctypes.POINTER(ctypes.c_float),ctypes.POINTER(ctypes.c_int)]
-        self._native.p3d_mouse_state.restype=None
-        self._native.p3d_mouse_set_locked.argtypes=[ctypes.c_void_p,ctypes.c_int]
-        self._native.p3d_mouse_set_locked.restype=None
+        self._native.p3d_entity_set_rotation.argtypes = [ctypes.c_void_p, ctypes.c_uint32, ctypes.c_float, ctypes.c_float, ctypes.c_float]
+        self._native.p3d_entity_set_rotation.restype = None
+        self._native.p3d_entity_set_color.argtypes = [ctypes.c_void_p, ctypes.c_uint32, ctypes.c_float, ctypes.c_float, ctypes.c_float, ctypes.c_float]
+        self._native.p3d_entity_set_color.restype = None
+        self._native.p3d_entity_set_enabled.argtypes = [ctypes.c_void_p, ctypes.c_uint32, ctypes.c_int, ctypes.c_int]
+        self._native.p3d_entity_set_enabled.restype = None
+        self._native.p3d_mouse_state.argtypes = [ctypes.c_void_p, ctypes.POINTER(ctypes.c_float), ctypes.POINTER(ctypes.c_float), ctypes.POINTER(ctypes.c_int)]
+        self._native.p3d_mouse_state.restype = None
+        self._native.p3d_mouse_set_locked.argtypes = [ctypes.c_void_p, ctypes.c_int]
+        self._native.p3d_mouse_set_locked.restype = None
+
+        # Mouse wheel was added after the original native ABI. Keep it optional
+        # so an older bundled DLL can still start the engine normally.
+        self._mouse_wheel = getattr(self._native, "p3d_mouse_wheel", None)
+        if self._mouse_wheel is not None:
+            self._mouse_wheel.argtypes = [ctypes.c_void_p]
+            self._mouse_wheel.restype = ctypes.c_float
 
         self._native.p3d_input_key_held.argtypes = [
             ctypes.c_void_p, ctypes.c_int
@@ -160,7 +168,7 @@ class Engine:
     def unregister(self, obj):
         if obj in self._objects:
             self._objects.remove(obj)
-        self._collision_pairs={p for p in self._collision_pairs if obj.id not in p}
+        self._collision_pairs = {p for p in self._collision_pairs if obj.id not in p}
 
     def update(self):
         if self._update_callback:
@@ -262,7 +270,10 @@ class Engine:
             else:
                 mouse._sync(mouse_state)
 
-            mouse._sync_wheel(self._native.p3d_mouse_wheel(engine_ptr))
+            if self._mouse_wheel is not None:
+                mouse._sync_wheel(self._mouse_wheel(engine_ptr))
+            else:
+                mouse._sync_wheel(0.0)
 
             if modes.camera:
                 camera._update_controls(mouse)
