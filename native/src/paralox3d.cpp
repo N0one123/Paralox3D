@@ -5,7 +5,7 @@
 #include <memory>
 #include <vector>
 
-struct Transform { float x=0.0f,y=0.0f,z=0.0f; float sx=1.0f,sy=1.0f,sz=1.0f; float pitch=0.0f,yaw=0.0f,roll=0.0f; float r=1.0f,g=1.0f,b=1.0f,a=1.0f; bool enabled=true,visible=true; };
+struct Transform { float x=0.0f,y=0.0f,z=0.0f; float sx=1.0f,sy=1.0f,sz=1.0f; float pitch=0.0f,yaw=0.0f,roll=0.0f; float r=1.0f,g=1.0f,b=1.0f,a=1.0f; bool enabled=true,visible=true,alive=true; };
 
 struct P3DEngine {
     int width=1280, height=720;
@@ -38,22 +38,31 @@ uint32_t p3d_entity_create(P3DEngine* engine) {
     return static_cast<uint32_t>(engine->transforms.size());
 }
 
+void p3d_entity_destroy(P3DEngine* engine, uint32_t entity) {
+    if (!engine || entity == 0 || entity > engine->transforms.size()) return;
+    engine->transforms[entity - 1].alive = false;
+    engine->transforms[entity - 1].enabled = false;
+    engine->transforms[entity - 1].visible = false;
+}
+
 void p3d_entity_set_position(P3DEngine* engine, uint32_t entity,
                              float x, float y, float z) {
     if (!engine || entity == 0 || entity > engine->transforms.size()) return;
     auto& t = engine->transforms[entity - 1];
+    if (!t.alive) return;
     t.x=x; t.y=y; t.z=z;
 }
 
-void p3d_entity_set_rotation(P3DEngine* engine,uint32_t entity,float pitch,float yaw,float roll){ if(!engine||!entity||entity>engine->transforms.size())return; auto& t=engine->transforms[entity-1];t.pitch=pitch;t.yaw=yaw;t.roll=roll; }
-void p3d_entity_set_color(P3DEngine* engine,uint32_t entity,float r,float g,float b,float a){ if(!engine||!entity||entity>engine->transforms.size())return; auto& t=engine->transforms[entity-1];t.r=r;t.g=g;t.b=b;t.a=a; }
-void p3d_entity_set_enabled(P3DEngine* engine,uint32_t entity,int enabled,int visible){ if(!engine||!entity||entity>engine->transforms.size())return; auto& t=engine->transforms[entity-1];t.enabled=enabled!=0;t.visible=visible!=0; }
+void p3d_entity_set_rotation(P3DEngine* engine,uint32_t entity,float pitch,float yaw,float roll){ if(!engine||!entity||entity>engine->transforms.size())return; auto& t=engine->transforms[entity-1];if(!t.alive)return;t.pitch=pitch;t.yaw=yaw;t.roll=roll; }
+void p3d_entity_set_color(P3DEngine* engine,uint32_t entity,float r,float g,float b,float a){ if(!engine||!entity||entity>engine->transforms.size())return; auto& t=engine->transforms[entity-1];if(!t.alive)return;t.r=r;t.g=g;t.b=b;t.a=a; }
+void p3d_entity_set_enabled(P3DEngine* engine,uint32_t entity,int enabled,int visible){ if(!engine||!entity||entity>engine->transforms.size())return; auto& t=engine->transforms[entity-1];if(!t.alive)return;t.enabled=enabled!=0;t.visible=visible!=0; }
 void p3d_mouse_state(P3DEngine* engine,float* x,float* y,int* buttons){ if(!engine||!engine->renderer)return;engine->renderer->mouse_state(*x,*y,*buttons); }
 void p3d_mouse_set_locked(P3DEngine* engine,int locked){ if(!engine||!engine->renderer)return;engine->renderer->mouse_set_locked(locked!=0); }
 float p3d_mouse_wheel(P3DEngine* engine){ if(!engine||!engine->renderer)return 0.0f; return engine->renderer->mouse_wheel(); }
 void p3d_entity_set_scale(P3DEngine* engine, uint32_t entity, float x, float y, float z) {
     if (!engine || entity == 0 || entity > engine->transforms.size()) return;
     auto& t = engine->transforms[entity - 1];
+    if (!t.alive) return;
     t.sx=x; t.sy=y; t.sz=z;
 }
 
@@ -72,11 +81,9 @@ int p3d_input_key_held(P3DEngine* engine, int key_code) {
     return engine->renderer->key_held(key_code) ? 1 : 0;
 }
 
-void p3d_engine_set_developer_overlay(P3DEngine* engine, int enabled, int object_count,
-                                      float fps, const char* current_task, int warning_count) {
+void p3d_engine_set_developer_overlay(P3DEngine* engine, int enabled, int object_count, float fps, const char* current_task, int warning_count) {
     if (!engine || !engine->renderer) return;
-    engine->renderer->set_developer_overlay(
-        enabled != 0, object_count, fps, current_task, warning_count);
+    engine->renderer->set_developer_overlay(enabled != 0, object_count, fps, current_task, warning_count);
 }
 
 int p3d_engine_diagnostics_clicked(P3DEngine* engine) {
@@ -95,8 +102,10 @@ int p3d_engine_step(P3DEngine* engine) {
         engine->running = false;
         return 0;
     }
-    for (const auto& t : engine->transforms)
+    for (const auto& t : engine->transforms) {
+        if (!t.alive) continue;
         engine->renderer->draw_cube(t.x,t.y,t.z,t.sx,t.sy,t.sz,t.pitch,t.yaw,t.roll,t.r,t.g,t.b,t.a,t.visible);
+    }
     engine->renderer->end_frame();
     engine->running = engine->renderer->running();
     return engine->running ? 1 : 0;
