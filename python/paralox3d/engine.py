@@ -36,7 +36,6 @@ class Engine:
         self._running = False
         self._camera_active = False
         self._fps_camera_active = False
-        self._fps_camera_active = False
 
         self._native = load()
         self._configure_abi()
@@ -82,8 +81,6 @@ class Engine:
         self._native.p3d_entity_set_enabled.restype=None
         self._native.p3d_mouse_state.argtypes=[ctypes.c_void_p,ctypes.POINTER(ctypes.c_float),ctypes.POINTER(ctypes.c_float),ctypes.POINTER(ctypes.c_int)]
         self._native.p3d_mouse_state.restype=None
-        self._native.p3d_mouse_set_locked.argtypes=[ctypes.c_void_p,ctypes.c_int]
-        self._native.p3d_mouse_set_locked.restype=None
         self._native.p3d_mouse_set_locked.argtypes=[ctypes.c_void_p,ctypes.c_int]
         self._native.p3d_mouse_set_locked.restype=None
 
@@ -152,12 +149,6 @@ class Engine:
 
     def _set_enabled(self, handle, enabled, visible):
         self._native.p3d_entity_set_enabled(self._engine, handle, int(enabled), int(visible))
-
-    def _set_mouse_locked(self, locked):
-        self._native.p3d_mouse_set_locked(ctypes.c_void_p(self._engine), int(bool(locked)))
-
-    def _set_fps_camera_active(self, active):
-        self._fps_camera_active = bool(active)
 
     def _set_mouse_locked(self, locked):
         self._native.p3d_mouse_set_locked(ctypes.c_void_p(self._engine), int(bool(locked)))
