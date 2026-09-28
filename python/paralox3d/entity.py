@@ -144,7 +144,9 @@ class Object:
         for c in tuple(self._children):c.destroy()
         if self.parent and self in self.parent._children:self.parent._children.remove(self)
         for c in tuple(self._components):c.on_destroy()
-        self._components.clear();self.enabled=False;self.visible=False;self._engine.unregister(self);self._push()
+        self._components.clear();self.enabled=False;self.visible=False
+        self._engine.unregister(self)
+        self._engine._destroy_entity(self._handle)
     def _update_components(self):
         if self.enabled:
             for c in tuple(self._components):
