@@ -134,7 +134,38 @@ public:
         camera_pitch_ = pitch; camera_yaw_ = yaw; camera_roll_ = roll;
     }
 
-    void mouse_state(float& x,float& y,int& buttons) const override { x=(float)last_mouse_x_; y=(float)last_mouse_y_; buttons=((GetAsyncKeyState(VK_LBUTTON)&0x8000)?1:0)|((GetAsyncKeyState(VK_RBUTTON)&0x8000)?2:0)|((GetAsyncKeyState(VK_MBUTTON)&0x8000)?4:0); }
+    void mouse_state(float& x,float& y,int& buttons) const override {
+        if (mouse_locked_) {
+            POINT p{};
+            GetCursorPos(&p);
+            ScreenToClient(hwnd_, &p);
+            const int cx = width_ / 2;
+            const int cy = height_ / 2;
+            x = static_cast<float>(cx + (p.x - cx));
+            y = static_cast<float>(cy + (p.y - cy));
+            SetCursorPos(screen_center_x_, screen_center_y_);
+        } else {
+            x = static_cast<float>(last_mouse_x_);
+            y = static_cast<float>(last_mouse_y_);
+        }
+        buttons=((GetAsyncKeyState(VK_LBUTTON)&0x8000)?1:0)|
+                ((GetAsyncKeyState(VK_RBUTTON)&0x8000)?2:0)|
+                ((GetAsyncKeyState(VK_MBUTTON)&0x8000)?4:0);
+    }
+
+    void mouse_set_locked(bool locked) override {
+        mouse_locked_ = locked;
+        if (mouse_locked_) {
+            POINT p{width_ / 2, height_ / 2};
+            ClientToScreen(hwnd_, &p);
+            screen_center_x_ = p.x;
+            screen_center_y_ = p.y;
+            SetCursorPos(screen_center_x_, screen_center_y_);
+            ShowCursor(FALSE);
+        } else {
+            ShowCursor(TRUE);
+        }
+    }
 
     bool key_held(int key_code) const override {
         if (key_code < 0 || key_code > 255) return false;
@@ -434,7 +465,9 @@ private:
     float camera_x_ = 0.0f, camera_y_ = 0.0f, camera_z_ = 0.0f;
     float camera_pitch_ = 0.0f, camera_yaw_ = 0.0f, camera_roll_ = 0.0f;
     bool left_drag_ = false, right_drag_ = false;
+    bool mouse_locked_ = false;
     int last_mouse_x_ = 0, last_mouse_y_ = 0;
+    int screen_center_x_ = 0, screen_center_y_ = 0;
 };
 
 #endif
