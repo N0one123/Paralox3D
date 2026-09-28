@@ -81,9 +81,14 @@ class ControllerComponent(Component):
     def on_start(self):
         from .input import mouse
 
-        self._yaw=float(self.owner.rotation.y)
+        # Controller yaw uses the camera's public yaw convention. The native
+        # renderer applies the inverse camera rotation, while Object rotation
+        # is a model rotation. Therefore the body's yaw is the inverse of the
+        # camera yaw. This keeps the visible body facing exactly where the
+        # camera looks.
+        self._yaw=-float(self.owner.rotation.y)
         self._pitch=max(-90.0,min(90.0,float(self.owner.rotation.x)))
-        self.owner.rotation=(0,self._yaw,0)
+        self.owner.rotation=(0,-self._yaw,0)
 
         # The controller owns mouse capture while it is enabled.
         self.owner._engine._set_mouse_locked(True)
@@ -319,16 +324,9 @@ class ControllerComponent(Component):
         self.air_time=0.0
 
     def _vectors(self):
-        import math
-        from .math import Vec3
-
-        yaw=math.radians(self._yaw)
-        # The native renderer mirrors world Z after applying the camera
-        # transform, so yaw 0 looks along +Z in world space.
-        # Keep movement aligned with exactly what the player sees.
-        forward=Vec3(math.sin(yaw),0,math.cos(yaw))
-        right=Vec3(math.cos(yaw),0,math.sin(yaw))
-        return forward,right
+        # Do not duplicate the engine's rotation math here. Object.forward
+        # and Object.right are the single source of truth for movement.
+        return self.owner.forward, self.owner.right
 
     def _camera_update(self):
         from .camera import camera
@@ -373,12 +371,11 @@ class ControllerComponent(Component):
         self._yaw-=mouse.dx*sx
         self._pitch-=mouse.dy*sy
         self._pitch=max(-90.0,min(90.0,self._pitch))
-        self.owner.rotation=(0,self._yaw,0)
+        # Object rotation is the model/body rotation, so it is the inverse
+        # of the camera's public yaw convention.
+        self.owner.rotation=(0,-self._yaw,0)
 
-        # Use the Object's own direction vectors so movement, body rotation,
-        # and the engine's rotation convention cannot drift apart.
-        forward=self.owner.forward
-        right=self.owner.right
+        forward,right=self._vectors()
         move=forward*((1 if held("w") else 0)-(1 if held("s") else 0))
         move=move+right*((1 if held("d") else 0)-(1 if held("a") else 0))
 
