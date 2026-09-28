@@ -141,7 +141,6 @@ public:
             relative_mouse_x_ = 0.0f;
             relative_mouse_y_ = 0.0f;
 
-            // Center-pointer FPS input, like Ursina's locked mouse.
             // Move the OS cursor back to the center after reading movement,
             // while resetting the baseline first so the synthetic mouse event
             // created by SetCursorPos contributes zero movement.
@@ -170,8 +169,6 @@ public:
         mouse_locked_ = locked;
         relative_mouse_x_ = 0.0f;
         relative_mouse_y_ = 0.0f;
-        left_drag_ = false;
-        right_drag_ = false;
 
         // Establish the current cursor position as the relative-input baseline.
         // This does not move or capture the OS cursor.
@@ -183,8 +180,6 @@ public:
             }
         }
 
-        // FPS mode hides the cursor visually, but deliberately does NOT
-        // capture, recenter, or otherwise lock the OS mouse.
         if (mouse_locked_ && !cursor_hidden_) {
             while (ShowCursor(FALSE) >= 0) {}
             cursor_hidden_ = true;
@@ -401,83 +396,6 @@ private:
                     }
                 }
 
-                if (self->camera_enabled_ && !self->mouse_locked_) {
-                    SetCapture(hwnd);
-                    self->left_drag_ = true;
-                    self->last_mouse_x_ = x;
-                    self->last_mouse_y_ = y;
-                    return 0;
-                }
-            }
-            if (msg == WM_RBUTTONDOWN && self->camera_enabled_ && !self->mouse_locked_) {
-                SetCapture(hwnd);
-                self->right_drag_ = true;
-                self->last_mouse_x_ = static_cast<int>(static_cast<short>(LOWORD(lparam)));
-                self->last_mouse_y_ = static_cast<int>(static_cast<short>(HIWORD(lparam)));
-                return 0;
-            }
-            if (msg == WM_LBUTTONUP) {
-                self->left_drag_ = false;
-                if (!self->right_drag_) ReleaseCapture();
-                return 0;
-            }
-            if (msg == WM_RBUTTONUP) {
-                self->right_drag_ = false;
-                if (!self->left_drag_) ReleaseCapture();
-                return 0;
-            }
-            if (msg == WM_MOUSEMOVE && self->camera_enabled_ && !self->mouse_locked_ &&
-                (self->left_drag_ || self->right_drag_)) {
-                const int x = static_cast<int>(static_cast<short>(LOWORD(lparam)));
-                const int y = static_cast<int>(static_cast<short>(HIWORD(lparam)));
-                const float dx = static_cast<float>(x - self->last_mouse_x_);
-                const float dy = static_cast<float>(y - self->last_mouse_y_);
-                self->last_mouse_x_ = x;
-                self->last_mouse_y_ = y;
-
-                if (self->left_drag_) {
-                    self->camera_yaw_ += dx * 0.25f;
-                    self->camera_pitch_ += dy * 0.25f;
-                    if (self->camera_pitch_ > 89.0f) self->camera_pitch_ = 89.0f;
-                    if (self->camera_pitch_ < -89.0f) self->camera_pitch_ = -89.0f;
-                }
-                if (self->right_drag_) {
-                    // Pan in the camera's local coordinate system instead of
-                    // the fixed world X/Y axes. This keeps RMB panning aligned
-                    // with the direction the camera is facing.
-                    const float yaw = self->camera_yaw_ * 3.14159265f / 180.0f;
-                    const float pitch = self->camera_pitch_ * 3.14159265f / 180.0f;
-                    const float roll = self->camera_roll_ * 3.14159265f / 180.0f;
-
-                    const float cy = std::cos(yaw);
-                    const float sy = std::sin(yaw);
-                    const float cp = std::cos(pitch);
-                    const float sp = std::sin(pitch);
-                    const float cr = std::cos(roll);
-                    const float sr = std::sin(roll);
-
-                    // Camera-local right vector, including roll.
-                    const float right_x = cy * cr + sy * sp * sr;
-                    const float right_y = cp * sr;
-                    const float right_z = -sy * cr + cy * sp * sr;
-
-                    // Camera-local up vector, including pitch, yaw and roll.
-                    const float up_x = -cy * sr + sy * sp * cr;
-                    const float up_y = cp * cr;
-                    const float up_z = sy * sr + cy * sp * cr;
-
-                    const float pan_speed = 0.0065f;
-                    self->camera_x_ -= right_x * dx * pan_speed;
-                    self->camera_y_ += up_y * dy * pan_speed;
-                    self->camera_z_ -= right_z * dx * pan_speed;
-
-                    // Vertical screen movement can also move along X/Z when
-                    // the camera is pitched, so panning follows the view.
-                    self->camera_x_ += up_x * dy * pan_speed;
-                    self->camera_y_ += up_y * dy * pan_speed;
-                    self->camera_z_ += up_z * dy * pan_speed;
-                }
-                return 0;
             }
             if (msg == WM_SIZE && self->hglrc_) {
                 const int w = LOWORD(lparam), h = HIWORD(lparam);
@@ -505,7 +423,6 @@ private:
     bool camera_enabled_ = false;
     float camera_x_ = 0.0f, camera_y_ = 0.0f, camera_z_ = 0.0f;
     float camera_pitch_ = 0.0f, camera_yaw_ = 0.0f, camera_roll_ = 0.0f;
-    bool left_drag_ = false, right_drag_ = false;
     bool mouse_locked_ = false;
     bool cursor_hidden_ = false;
     mutable int last_mouse_x_ = 0, last_mouse_y_ = 0;
