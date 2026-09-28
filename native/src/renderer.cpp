@@ -136,14 +136,10 @@ public:
 
     void mouse_state(float& x,float& y,int& buttons) const override {
         if (mouse_locked_) {
-            POINT p{};
-            GetCursorPos(&p);
-            ScreenToClient(hwnd_, &p);
-            const int cx = width_ / 2;
-            const int cy = height_ / 2;
-            x = static_cast<float>(cx + (p.x - cx));
-            y = static_cast<float>(cy + (p.y - cy));
-            SetCursorPos(screen_center_x_, screen_center_y_);
+            x = static_cast<float>(relative_mouse_x_);
+            y = static_cast<float>(relative_mouse_y_);
+            relative_mouse_x_ = 0.0f;
+            relative_mouse_y_ = 0.0f;
         } else {
             x = static_cast<float>(last_mouse_x_);
             y = static_cast<float>(last_mouse_y_);
@@ -155,16 +151,11 @@ public:
 
     void mouse_set_locked(bool locked) override {
         mouse_locked_ = locked;
-        if (mouse_locked_) {
-            POINT p{width_ / 2, height_ / 2};
-            ClientToScreen(hwnd_, &p);
-            screen_center_x_ = p.x;
-            screen_center_y_ = p.y;
-            SetCursorPos(screen_center_x_, screen_center_y_);
-            ShowCursor(FALSE);
-        } else {
-            ShowCursor(TRUE);
-        }
+        relative_mouse_x_ = 0.0f;
+        relative_mouse_y_ = 0.0f;
+        left_drag_ = false;
+        right_drag_ = false;
+        ReleaseCapture();
     }
 
     bool key_held(int key_code) const override {
@@ -342,6 +333,16 @@ private:
                 PostQuitMessage(0);
                 return 0;
             }
+            if (msg == WM_MOUSEMOVE) {
+                const int x = static_cast<int>(static_cast<short>(LOWORD(lparam)));
+                const int y = static_cast<int>(static_cast<short>(HIWORD(lparam)));
+                if (self->mouse_locked_) {
+                    self->relative_mouse_x_ += static_cast<float>(x - self->last_mouse_x_);
+                    self->relative_mouse_y_ += static_cast<float>(y - self->last_mouse_y_);
+                }
+                self->last_mouse_x_ = x;
+                self->last_mouse_y_ = y;
+            }
             if (msg == WM_LBUTTONDOWN) {
                 const int x = static_cast<int>(static_cast<short>(LOWORD(lparam)));
                 const int y = static_cast<int>(static_cast<short>(HIWORD(lparam)));
@@ -360,7 +361,7 @@ private:
                     }
                 }
 
-                if (self->camera_enabled_) {
+                if (self->camera_enabled_ && !self->mouse_locked_) {
                     SetCapture(hwnd);
                     self->left_drag_ = true;
                     self->last_mouse_x_ = x;
@@ -368,7 +369,7 @@ private:
                     return 0;
                 }
             }
-            if (msg == WM_RBUTTONDOWN && self->camera_enabled_) {
+            if (msg == WM_RBUTTONDOWN && self->camera_enabled_ && !self->mouse_locked_) {
                 SetCapture(hwnd);
                 self->right_drag_ = true;
                 self->last_mouse_x_ = static_cast<int>(static_cast<short>(LOWORD(lparam)));
@@ -385,7 +386,7 @@ private:
                 if (!self->left_drag_) ReleaseCapture();
                 return 0;
             }
-            if (msg == WM_MOUSEMOVE && self->camera_enabled_ &&
+            if (msg == WM_MOUSEMOVE && self->camera_enabled_ && !self->mouse_locked_ &&
                 (self->left_drag_ || self->right_drag_)) {
                 const int x = static_cast<int>(static_cast<short>(LOWORD(lparam)));
                 const int y = static_cast<int>(static_cast<short>(HIWORD(lparam)));
@@ -467,6 +468,7 @@ private:
     bool left_drag_ = false, right_drag_ = false;
     bool mouse_locked_ = false;
     int last_mouse_x_ = 0, last_mouse_y_ = 0;
+    float relative_mouse_x_ = 0.0f, relative_mouse_y_ = 0.0f;
     int screen_center_x_ = 0, screen_center_y_ = 0;
 };
 
