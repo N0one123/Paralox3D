@@ -35,7 +35,6 @@ class Engine:
         self._update_callback = None
         self._running = False
         self._camera_active = False
-        self._fps_camera_active = False
 
         self._native = load()
         self._configure_abi()
@@ -153,9 +152,6 @@ class Engine:
     def _set_mouse_locked(self, locked):
         self._native.p3d_mouse_set_locked(ctypes.c_void_p(self._engine), int(bool(locked)))
 
-    def _set_fps_camera_active(self, active):
-        self._fps_camera_active = bool(active)
-
     def register(self, obj):
         if obj not in self._objects:
             self._objects.append(obj)
@@ -183,7 +179,7 @@ class Engine:
         while self._running:
             engine_ptr = ctypes.c_void_p(self._engine)
 
-            camera_enabled = bool(modes.camera or self._fps_camera_active)
+            camera_enabled = bool(modes.camera)
             self._native.p3d_camera_set_enabled(
                 engine_ptr, int(camera_enabled)
             )
@@ -265,6 +261,9 @@ class Engine:
                 mouse._sync_relative(mouse_state)
             else:
                 mouse._sync(mouse_state)
+
+            if modes.camera:
+                camera._update_controls(mouse)
 
             self.update()
             _dispatch_collision_events(self)
