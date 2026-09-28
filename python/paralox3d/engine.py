@@ -254,13 +254,17 @@ class Engine:
                 ctypes.byref(my),
                 ctypes.byref(buttons),
             )
-            mouse._sync((
+            mouse_state = (
                 mx.value,
                 my.value,
                 bool(buttons.value & 1),
                 bool(buttons.value & 2),
                 bool(buttons.value & 4),
-            ))
+            )
+            if mouse.locked:
+                mouse._sync_relative(mouse_state)
+            else:
+                mouse._sync(mouse_state)
 
             self.update()
             _dispatch_collision_events(self)
