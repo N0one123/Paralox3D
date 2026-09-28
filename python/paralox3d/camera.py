@@ -102,6 +102,16 @@ class Camera:
             self.pitch += mouse.dy * 0.25
             self.pitch = max(-89.0, min(89.0, self.pitch))
 
+        if mouse.wheel:
+            yaw = math.radians(self.yaw)
+            pitch = math.radians(self.pitch)
+            forward = Vec3(
+                math.sin(yaw) * math.cos(pitch),
+                math.sin(pitch),
+                -math.cos(yaw) * math.cos(pitch),
+            )
+            self.position = self.position + forward * (mouse.wheel * 0.5)
+
         if mouse.right:
             yaw = math.radians(self.yaw)
             pitch = math.radians(self.pitch)
