@@ -34,6 +34,11 @@ class Mouse:
         for n,d in (("left",l),("right",r),("middle",m)):
             if d and not getattr(self,"_"+n):self._pressed.add(n)
             setattr(self,"_"+n,d)
+    def _sync_relative(self,state):
+        dx,dy,l,r,m=state;self._dx=float(dx);self._dy=float(dy)
+        for n,d in (("left",l),("right",r),("middle",m)):
+            if d and not getattr(self,"_"+n):self._pressed.add(n)
+            setattr(self,"_"+n,d)
     def _end_frame(self):self._pressed.clear();self._dx=0.0;self._dy=0.0
     def lock(self):self.locked=True
     def unlock(self):self.locked=False
