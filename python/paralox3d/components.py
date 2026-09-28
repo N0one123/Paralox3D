@@ -44,14 +44,17 @@ class ControllerComponent(Component):
                  jump_height=2.0,jump_duration=0.5,fall_after=0.35,
                  sensitivity=(40.0,40.0),third_person=False,distance=6.0,
                  eye_height=None,step_height=0.5,sprint=False,sprint_speed=None,
-                 sprint_key="shift"):
+                 sprint_key="shift",jump_speed=None,mouse_sensitivity=None):
         super().__init__(owner)
         self.height=float(height)
         self.speed=float(speed)
         self.gravity=float(gravity)
         self.jump_height=float(jump_height)
+        self.jump_speed=None if jump_speed is None else float(jump_speed)
         self.jump_duration=float(jump_duration)
         self.fall_after=float(fall_after)
+        if mouse_sensitivity is not None:
+            sensitivity=mouse_sensitivity
         if isinstance(sensitivity,(int,float)):
             self.mouse_sensitivity=float(sensitivity)
         else:
@@ -179,7 +182,8 @@ class ControllerComponent(Component):
         # v² = 2gh. gravity is deliberately positive here and applied down.
         import math
         g=max(0.01,self.gravity*10.0)
-        self.velocity_y=math.sqrt(2.0*g*self.jump_height)
+        self.velocity_y=(self.jump_speed if self.jump_speed is not None
+                         else math.sqrt(2.0*g*self.jump_height))
         self.grounded=False
         self.jumping=True
         self.air_time=0.0
