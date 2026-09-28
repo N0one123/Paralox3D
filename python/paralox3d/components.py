@@ -55,11 +55,17 @@ class FPSController(Component):
         self.owner._engine._set_fps_camera_active(True)
         mouse.lock()
 
-    def on_destroy(self):
+    def _leave_mouse_mode(self):
         from .input import mouse
         self.owner._engine._set_mouse_locked(False)
         self.owner._engine._set_fps_camera_active(False)
         mouse.unlock()
+
+    def on_disable(self):
+        self._leave_mouse_mode()
+
+    def on_destroy(self):
+        self._leave_mouse_mode()
 
     def _vectors(self):
         import math
@@ -93,6 +99,10 @@ class FPSController(Component):
         from .collision import Collision
 
         frame_dt=max(0.0,float(dt))
+
+        if pressed("escape"):
+            self.enabled=False
+            return
 
         self._yaw += mouse.dx*self.sensitivity
         self._pitch -= mouse.dy*self.sensitivity
