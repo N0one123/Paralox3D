@@ -43,7 +43,8 @@ class ControllerComponent(Component):
     def __init__(self,owner=None,height=2.0,speed=5.0,gravity=1.0,
                  jump_height=2.0,jump_duration=0.5,fall_after=0.35,
                  sensitivity=(40.0,40.0),third_person=False,distance=6.0,
-                 eye_height=None,step_height=0.5):
+                 eye_height=None,step_height=0.5,sprint=False,sprint_speed=None,
+                 sprint_key="shift"):
         super().__init__(owner)
         self.height=float(height)
         self.speed=float(speed)
@@ -59,6 +60,9 @@ class ControllerComponent(Component):
         self.distance=float(distance)
         self.eye_height=float(self.height if eye_height is None else eye_height)
         self.step_height=float(step_height)
+        self.sprint=bool(sprint)
+        self.sprint_speed=float(self.speed*1.5 if sprint_speed is None else sprint_speed)
+        self.sprint_key=str(sprint_key)
 
         self.grounded=False
         self.jumping=False
@@ -224,7 +228,11 @@ class ControllerComponent(Component):
         move=forward*((1 if held("w") else 0)-(1 if held("s") else 0))
         move=move+right*((1 if held("d") else 0)-(1 if held("a") else 0))
         if move.length_squared():
-            move=move.normalized()*self.speed*frame_dt
+            move=move.normalized()
+            current_speed=self.speed
+            if self.sprint and held(self.sprint_key):
+                current_speed=self.sprint_speed
+            move=move*current_speed*frame_dt
             self._move(move)
 
         if pressed("space"):
