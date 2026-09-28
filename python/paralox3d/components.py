@@ -1,4 +1,4 @@
-"""Component helpers and built-in controllers."""
+"""Component helpers and built-in character movement controllers."""
 
 class Component:
     def __init__(self,owner=None):
@@ -38,13 +38,12 @@ class Script(Component):
 
 
 class ControllerComponent(Component):
-    """Built-in character controller with Ursina-style FPS movement."""
+    """Built-in character movement controller."""
 
     def __init__(self,owner=None,height=2.0,speed=5.0,gravity=1.0,
                  jump_height=2.0,jump_duration=0.5,fall_after=0.35,
-                 sensitivity=(0.25,0.25),third_person=False,distance=6.0,
-                 eye_height=None,step_height=0.5,sprint=False,sprint_speed=None,
-                 sprint_key="shift",jump_speed=None,mouse_sensitivity=None):
+                 step_height=0.5,sprint=False,sprint_speed=None,
+                 sprint_key="shift",jump_speed=None):
         super().__init__(owner)
 
         self.height=float(height)
@@ -55,18 +54,7 @@ class ControllerComponent(Component):
         self.fall_after=float(fall_after)
         self.jump_speed=None if jump_speed is None else float(jump_speed)
 
-        if mouse_sensitivity is not None:
-            sensitivity=mouse_sensitivity
-        if isinstance(sensitivity,(int,float)):
-            self.mouse_sensitivity=(float(sensitivity),float(sensitivity))
-        else:
-            self.mouse_sensitivity=(float(sensitivity[0]),float(sensitivity[1]))
-
-        self.third_person=bool(third_person)
-        self.distance=float(distance)
-        self.eye_height=float(self.height if eye_height is None else eye_height)
         self.step_height=max(0.0,float(step_height))
-
         self.sprint=bool(sprint)
         self.sprint_speed=float(self.speed*1.5 if sprint_speed is None else sprint_speed)
         self.sprint_key=str(sprint_key)
@@ -75,26 +63,8 @@ class ControllerComponent(Component):
         self.jumping=False
         self.air_time=0.0
         self.velocity_y=0.0
-        self._yaw=0.0
-        self._pitch=0.0
 
     def on_start(self):
-        from .input import mouse
-
-        # Controller yaw uses the camera's public yaw convention. The native
-        # renderer applies the inverse camera rotation, while Object rotation
-        # is a model rotation. Therefore the body's yaw is the inverse of the
-        # camera yaw. This keeps the visible body facing exactly where the
-        # camera looks.
-        self._yaw=-float(self.owner.rotation.y)
-        self._pitch=max(-90.0,min(90.0,float(self.owner.rotation.x)))
-        self.owner.rotation=(0,-self._yaw,0)
-
-        # The controller owns mouse capture while it is enabled.
-        self.owner._engine._set_mouse_locked(True)
-        self.owner._engine._set_fps_camera_active(True)
-        mouse.lock()
-
         # Controllers use a simple upright body collider. Objects keep their
         # normal auto-sized collider unless the user explicitly changed it.
         if self.owner.collider._auto_size:
@@ -105,25 +75,6 @@ class ControllerComponent(Component):
             self.owner.collider.size=(radius*2.0,self.height,radius*2.0)
 
         self._snap_to_ground()
-        self._camera_update()
-
-    def on_enable(self):
-        from .input import mouse
-        self.owner._engine._set_mouse_locked(True)
-        self.owner._engine._set_fps_camera_active(True)
-        mouse.lock()
-
-    def on_disable(self):
-        self._leave_mouse_mode()
-
-    def on_destroy(self):
-        self._leave_mouse_mode()
-
-    def _leave_mouse_mode(self):
-        from .input import mouse
-        self.owner._engine._set_mouse_locked(False)
-        self.owner._engine._set_fps_camera_active(False)
-        mouse.unlock()
 
     def _is_solid(self,other):
         return (
@@ -328,52 +279,17 @@ class ControllerComponent(Component):
         # and Object.right are the single source of truth for movement.
         return self.owner.forward, self.owner.right
 
-    def _camera_update(self):
-        from .camera import camera
-
-        forward,_=self._vectors()
-        if self.third_person:
-            behind=forward*-self.distance
-            camera.position=(
-                self.owner.x,
-                self.owner.y+self.eye_height*0.5,
-                self.owner.z+behind.z
-            )
-            camera.look_at((
-                self.owner.x,
-                self.owner.y+self.height*0.5,
-                self.owner.z
-            ))
-        else:
-            camera.position=(
-                self.owner.x,
-                self.owner.y+self.eye_height*0.5,
-                self.owner.z
-            )
-            camera.rotation=(self._pitch,self._yaw,0)
-
     def update(self):
-        from .input import held,pressed,mouse
+        from .input import held,pressed
         from .clock import dt
         from .math import Vec3
 
         frame_dt=max(0.0,float(dt))
 
-        # Escape releases FPS mode. Re-enabling the component captures it again.
+        # Escape disables the movement controller.
         if pressed("escape"):
             self.enabled=False
             return
-
-        sx,sy=self.mouse_sensitivity
-        # Native relative mouse X is opposite to the camera yaw direction
-        # expected by the FPS controller. Invert it so moving the mouse left
-        # turns the view left and moving it right turns the view right.
-        self._yaw-=mouse.dx*sx
-        self._pitch-=mouse.dy*sy
-        self._pitch=max(-90.0,min(90.0,self._pitch))
-        # Object rotation is the model/body rotation, so it is the inverse
-        # of the camera's public yaw convention.
-        self.owner.rotation=(0,-self._yaw,0)
 
         forward,right=self._vectors()
         move=forward*((1 if held("w") else 0)-(1 if held("s") else 0))
