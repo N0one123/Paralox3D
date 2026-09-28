@@ -11,7 +11,6 @@ public:
     virtual bool key_held(int key_code) const = 0;
     virtual void mouse_state(float& x,float& y,int& buttons) const = 0;
     virtual void mouse_set_locked(bool locked) = 0;
-    virtual void mouse_set_locked(bool locked) = 0;
     virtual void camera_set_enabled(bool enabled) = 0;
     virtual void camera_set_transform(float x, float y, float z, float pitch, float yaw, float roll) = 0;
     virtual void set_developer_overlay(bool enabled, int object_count, float fps,
