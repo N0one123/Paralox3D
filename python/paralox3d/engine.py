@@ -59,6 +59,8 @@ class Engine:
 
         self._native.p3d_entity_create.argtypes = [ctypes.c_void_p]
         self._native.p3d_entity_create.restype = ctypes.c_uint32
+        self._native.p3d_entity_destroy.argtypes = [ctypes.c_void_p, ctypes.c_uint32]
+        self._native.p3d_entity_destroy.restype = None
 
         self._native.p3d_entity_set_position.argtypes = [
             ctypes.c_void_p,
@@ -156,6 +158,9 @@ class Engine:
 
     def _set_enabled(self, handle, enabled, visible):
         self._native.p3d_entity_set_enabled(self._engine, handle, int(enabled), int(visible))
+
+    def _destroy_entity(self, handle):
+        self._native.p3d_entity_destroy(self._engine, handle)
 
     def _set_mouse_locked(self, locked):
         self._native.p3d_mouse_set_locked(ctypes.c_void_p(self._engine), int(bool(locked)))
