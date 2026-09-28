@@ -277,5 +277,5 @@ class Controller:
         if size is not None:
             obj.collider.size=size
         obj.add(controller)
-        obj.fps_controller=controller
+        obj.controller=controller
         return obj
