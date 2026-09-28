@@ -58,14 +58,16 @@ void p3d_entity_set_position(P3DEngine* engine, uint32_t entity,
 }
 
 void p3d_entity_set_rotation(P3DEngine* engine,uint32_t entity,float pitch,float yaw,float roll){ if(!engine||!entity)return;auto it=engine->transforms.find(entity);if(it==engine->transforms.end())return;auto& t=it->second;if(!t.alive)return;t.pitch=pitch;t.yaw=yaw;t.roll=roll; }
-void p3d_entity_set_color(P3DEngine* engine,uint32_t entity,float r,float g,float b,float a){ if(!engine||!entity||entity>engine->transforms.size())return; auto& t=engine->transforms[entity-1];if(!t.alive)return;t.r=r;t.g=g;t.b=b;t.a=a; }
-void p3d_entity_set_enabled(P3DEngine* engine,uint32_t entity,int enabled,int visible){ if(!engine||!entity||entity>engine->transforms.size())return; auto& t=engine->transforms[entity-1];if(!t.alive)return;t.enabled=enabled!=0;t.visible=visible!=0; }
+void p3d_entity_set_color(P3DEngine* engine,uint32_t entity,float r,float g,float b,float a){ if(!engine||!entity)return;auto it=engine->transforms.find(entity);if(it==engine->transforms.end())return;auto& t=it->second;if(!t.alive)return;t.r=r;t.g=g;t.b=b;t.a=a; }
+void p3d_entity_set_enabled(P3DEngine* engine,uint32_t entity,int enabled,int visible){ if(!engine||!entity)return;auto it=engine->transforms.find(entity);if(it==engine->transforms.end())return;auto& t=it->second;if(!t.alive)return;t.enabled=enabled!=0;t.visible=visible!=0; }
 void p3d_mouse_state(P3DEngine* engine,float* x,float* y,int* buttons){ if(!engine||!engine->renderer)return;engine->renderer->mouse_state(*x,*y,*buttons); }
 void p3d_mouse_set_locked(P3DEngine* engine,int locked){ if(!engine||!engine->renderer)return;engine->renderer->mouse_set_locked(locked!=0); }
 float p3d_mouse_wheel(P3DEngine* engine){ if(!engine||!engine->renderer)return 0.0f; return engine->renderer->mouse_wheel(); }
 void p3d_entity_set_scale(P3DEngine* engine, uint32_t entity, float x, float y, float z) {
-    if (!engine || entity == 0 || entity > engine->transforms.size()) return;
-    auto& t = engine->transforms[entity - 1];
+    if (!engine || entity == 0) return;
+    auto it=engine->transforms.find(entity);
+    if (it==engine->transforms.end()) return;
+    auto& t=it->second;
     if (!t.alive) return;
     t.sx=x; t.sy=y; t.sz=z;
 }
