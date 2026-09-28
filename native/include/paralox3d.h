@@ -28,7 +28,7 @@ P3D_API void p3d_entity_set_color(P3DEngine* engine, uint32_t entity, float r, f
 P3D_API void p3d_entity_set_enabled(P3DEngine* engine, uint32_t entity, int enabled, int visible);
 P3D_API void p3d_mouse_state(P3DEngine* engine, float* x, float* y, int* buttons);
 P3D_API void p3d_mouse_set_locked(P3DEngine* engine, int locked);
-P3D_API void p3d_mouse_set_locked(P3DEngine* engine, int locked);
+P3D_API float p3d_mouse_wheel(P3DEngine* engine);
 P3D_API int p3d_input_key_held(P3DEngine* engine, int key_code);
 P3D_API void p3d_camera_set_enabled(P3DEngine* engine, int enabled);
 P3D_API void p3d_camera_set_transform(P3DEngine* engine, float x, float y, float z, float pitch, float yaw, float roll);
