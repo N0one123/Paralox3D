@@ -508,7 +508,7 @@ private:
     bool left_drag_ = false, right_drag_ = false;
     bool mouse_locked_ = false;
     bool cursor_hidden_ = false;
-    int last_mouse_x_ = 0, last_mouse_y_ = 0;
+    mutable int last_mouse_x_ = 0, last_mouse_y_ = 0;
     mutable float relative_mouse_x_ = 0.0f, relative_mouse_y_ = 0.0f;
     int screen_center_x_ = 0, screen_center_y_ = 0;
 };
