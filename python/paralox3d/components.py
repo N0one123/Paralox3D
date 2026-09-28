@@ -1,4 +1,5 @@
 """Component helpers and built-in controllers."""
+
 class Component:
     def __init__(self,owner=None):
         self.owner=owner
@@ -36,24 +37,54 @@ class Script(Component):
             self._update()
 
 
-class FPSController(Component):
-    """Low-level first/third-person controller used by FPS()."""
-    def __init__(self,owner=None,speed=5.0,sprint=8.0,jump_speed=7.0,gravity=-18.0,
-                 third_person=False,sensitivity=0.18,distance=6.0,height=2.0):
+class Controller(Component):
+    """Ursina-style character controller with first-person camera control."""
+
+    def __init__(self,owner=None,height=2.0,speed=5.0,gravity=1.0,
+                 jump_height=2.0,jump_duration=0.5,fall_after=0.35,
+                 sensitivity=(40.0,40.0),third_person=False,distance=6.0,
+                 eye_height=None,step_height=0.5):
         super().__init__(owner)
-        self.speed=float(speed); self.sprint=float(sprint); self.jump_speed=float(jump_speed)
-        self.gravity=float(gravity); self.third_person=bool(third_person)
-        self.sensitivity=float(sensitivity); self.distance=float(distance); self.height=float(height)
-        self.velocity_y=0.0; self.grounded=False; self._pitch=0.0; self._yaw=0.0
+        self.height=float(height)
+        self.speed=float(speed)
+        self.gravity=float(gravity)
+        self.jump_height=float(jump_height)
+        self.jump_duration=float(jump_duration)
+        self.fall_after=float(fall_after)
+        if isinstance(sensitivity,(int,float)):
+            self.mouse_sensitivity=float(sensitivity)
+        else:
+            self.mouse_sensitivity=(float(sensitivity[0]),float(sensitivity[1]))
+        self.third_person=bool(third_person)
+        self.distance=float(distance)
+        self.eye_height=float(self.height if eye_height is None else eye_height)
+        self.step_height=float(step_height)
+
+        self.grounded=False
+        self.jumping=False
+        self.air_time=0.0
+        self.velocity_y=0.0
+        self._yaw=0.0
+        self._pitch=0.0
 
     def on_start(self):
         from .input import mouse
         self._yaw=float(self.owner.rotation.y)
-        self._pitch=max(-89.0,min(89.0,float(self.owner.rotation.x)))
+        self._pitch=max(-90.0,min(90.0,float(self.owner.rotation.x)))
         self.owner.rotation=(0,self._yaw,0)
+
+        # Controller owns the camera while enabled. The native layer only
+        # hides the cursor, it never captures or recenters the OS mouse.
         self.owner._engine._set_mouse_locked(True)
         self.owner._engine._set_fps_camera_active(True)
         mouse.lock()
+
+        # Make the controller collider match the character height.
+        if self.owner.collider._auto_size:
+            radius=max(0.01,min(abs(self.owner.scale.x),abs(self.owner.scale.z))*0.5)
+            self.owner.collider.size=(radius*2.0,self.height,radius*2.0)
+
+        self._snap_to_ground()
 
     def _leave_mouse_mode(self):
         from .input import mouse
@@ -61,52 +92,119 @@ class FPSController(Component):
         self.owner._engine._set_fps_camera_active(False)
         mouse.unlock()
 
+    def on_enable(self):
+        self.owner._engine._set_mouse_locked(True)
+        self.owner._engine._set_fps_camera_active(True)
+        from .input import mouse
+        mouse.lock()
+
     def on_disable(self):
         self._leave_mouse_mode()
 
     def on_destroy(self):
         self._leave_mouse_mode()
 
+    def _is_solid(self,other):
+        return (other is not self.owner and other.enabled and
+                other.collider.enabled and not other.collider.is_trigger)
+
+    def _ray(self,origin,direction,distance):
+        from .collision import raycast
+        return raycast(origin,direction,distance=distance,ignore=(self.owner,))
+
+    def _snap_to_ground(self):
+        from .math import Vec3
+        hit=self._ray(self.owner.position+Vec3(0,self.height*0.5+0.05,0),
+                      Vec3(0,-1,0),self.height+1.0)
+        if hit and hit.object and self._is_solid(hit.object) and hit.normal.y>0.7:
+            self.owner.y=hit.point.y+self.owner.collider.size.y*0.5
+            self.grounded=True
+            self.air_time=0.0
+            self.velocity_y=0.0
+
+    def _horizontal_clear(self,position):
+        from .collision import Collision
+        original=self.owner.position
+        self.owner.position=position
+        blocked=False
+        for other in tuple(self.owner._engine._objects):
+            if not self._is_solid(other):
+                continue
+            if Collision(self.owner,other):
+                # Contact with the floor is allowed. What blocks movement is
+                # an obstacle overlapping the character's vertical body.
+                overlap=min(self.owner.collider.max.y,other.collider.max.y)-max(
+                    self.owner.collider.min.y,other.collider.min.y)
+                if overlap>0.05:
+                    blocked=True
+                    break
+        self.owner.position=original
+        return not blocked
+
+    def _move(self,amount):
+        # Try the full movement first, then each axis separately. This gives
+        # natural wall sliding instead of stopping both axes at once.
+        if amount.length_squared()==0:
+            return
+        target=self.owner.position+amount
+        if self._horizontal_clear(target):
+            self.owner.position=target
+            return
+
+        x_target=self.owner.position+type(amount)(amount.x,0,0)
+        if abs(amount.x)>0 and self._horizontal_clear(x_target):
+            self.owner.position=x_target
+
+        z_target=self.owner.position+type(amount)(0,0,amount.z)
+        if abs(amount.z)>0 and self._horizontal_clear(z_target):
+            self.owner.position=z_target
+
+    def _ground_check(self):
+        from .math import Vec3
+        bottom=self.owner.collider.min.y
+        hit=self._ray(Vec3(self.owner.x,bottom+0.08,self.owner.z),
+                      Vec3(0,-1,0),self.step_height+0.18)
+        if hit and hit.object and self._is_solid(hit.object) and hit.normal.y>0.7:
+            self.owner.y=hit.point.y+self.owner.collider.size.y*0.5
+            return True
+        return False
+
+    def _jump(self):
+        if not self.grounded:
+            return
+        # v² = 2gh. gravity is deliberately positive here and applied down.
+        import math
+        g=max(0.01,self.gravity*10.0)
+        self.velocity_y=math.sqrt(2.0*g*self.jump_height)
+        self.grounded=False
+        self.jumping=True
+        self.air_time=0.0
+
     def _vectors(self):
         import math
         from .math import Vec3
         yaw=math.radians(self._yaw)
-        return Vec3(math.sin(yaw),0,-math.cos(yaw)), Vec3(math.cos(yaw),0,math.sin(yaw))
+        forward=Vec3(math.sin(yaw),0,-math.cos(yaw))
+        right=Vec3(math.cos(yaw),0,math.sin(yaw))
+        return forward,right
 
-    def _blocked(self):
-        # Horizontal movement must not be blocked merely because the player
-        # is standing on the floor. Only count an obstacle when the collider
-        # volumes have real vertical overlap.
-        from .collision import Collision
-        player_min=self.owner.collider.min
-        player_max=self.owner.collider.max
-        for other in tuple(self.owner._engine._objects):
-            if other is self.owner or not other.collider.enabled or other.collider.is_trigger:
-                continue
-            other_min=other.collider.min
-            other_max=other.collider.max
-            vertical_overlap=min(player_max.y,other_max.y)-max(player_min.y,other_min.y)
-            if vertical_overlap <= 1e-5:
-                continue
-            if Collision(self.owner,other):
-                return True
-        return False
-
-    def _move_horizontal(self,dx,dz):
-        start=self.owner.position.copy()
-        if dx:
-            self.owner.position=(start.x+dx,start.y,start.z)
-            if self._blocked(): self.owner.position=start
-        if dz:
-            current=self.owner.position.copy()
-            self.owner.position=(current.x,current.y,current.z+dz)
-            if self._blocked(): self.owner.position=current
+    def _camera_update(self):
+        from .camera import camera
+        forward,_=self._vectors()
+        eye=self.owner.position.y+self.eye_height*0.5
+        if self.third_person:
+            behind=forward*-self.distance
+            camera.position=(self.owner.x+behind.x,eye,self.owner.z+behind.z)
+            camera.look_at((self.owner.x,self.owner.y+self.height*0.5,self.owner.z))
+        else:
+            camera.position=(self.owner.x,eye,self.owner.z)
+            camera.rotation=(self._pitch,self._yaw,0)
 
     def update(self):
         from .input import held,pressed,mouse
         from .clock import dt
-        from .camera import camera
-        from .collision import Collision
+        from .math import Vec3
+        import math
 
         frame_dt=max(0.0,float(dt))
 
@@ -114,103 +212,70 @@ class FPSController(Component):
             self.enabled=False
             return
 
-        self._yaw += mouse.dx*self.sensitivity
-        self._pitch -= mouse.dy*self.sensitivity
-        self._pitch=max(-89.0,min(89.0,self._pitch))
-
-        # Body follows camera yaw, while pitch stays camera-only.
+        # Ursina-style mouse look. dx/dy are true per-frame relative motion,
+        # so there is no fake return-to-zero camera movement.
+        sx,sy=self.mouse_sensitivity
+        self._yaw += mouse.dx*sx
+        self._pitch -= mouse.dy*sy
+        self._pitch=max(-90.0,min(90.0,self._pitch))
         self.owner.rotation=(0,self._yaw,0)
+
         forward,right=self._vectors()
+        move=forward*((1 if held("w") else 0)-(1 if held("s") else 0))
+        move=move+right*((1 if held("d") else 0)-(1 if held("a") else 0))
+        if move.length_squared():
+            move=move.normalized()*self.speed*frame_dt
+            self._move(move)
 
-        x=(1 if held("d") else 0)-(1 if held("a") else 0)
-        z=(1 if held("w") else 0)-(1 if held("s") else 0)
-        move=right*x+forward*z
-        if move.length():
-            move=move.normalized()
-            speed=self.sprint if held("shift") else self.speed
-            self._move_horizontal(move.x*speed*frame_dt,move.z*speed*frame_dt)
+        if pressed("space"):
+            self._jump()
 
-        if pressed("space") and self.grounded:
-            self.velocity_y=self.jump_speed
-            self.grounded=False
+        if self.gravity:
+            gravity_strength=max(0.01,self.gravity*10.0)
+            self.velocity_y-=gravity_strength*frame_dt
 
-        old_y=self.owner.y
-        self.velocity_y+=self.gravity*frame_dt
-        self.owner.y=old_y+self.velocity_y*frame_dt
-        self.grounded=False
-
-        if self._blocked():
-            # Resolve vertical contact. The existing floor behavior is preserved,
-            # while ceilings are prevented from letting the player pass through.
-            if self.velocity_y <= 0:
-                best=None
-                for other in tuple(self.owner._engine._objects):
-                    if other is self.owner or not other.collider.enabled or other.collider.is_trigger:
-                        continue
-                    if Collision(self.owner,other):
-                        top=other.collider.max.y
-                        if best is None or top>best: best=top
-                if best is not None:
-                    self.owner.y=best+self.owner.collider.size.y*.5
-                    self.velocity_y=0.0
-                    self.grounded=True
+            vertical=self.velocity_y*frame_dt
+            if vertical!=0:
+                target=self.owner.position+Vec3(0,vertical,0)
+                if self._horizontal_clear(target):
+                    self.owner.position=target
                 else:
-                    self.owner.y=old_y
+                    if self.velocity_y<0:
+                        self.grounded=True
+                        self.jumping=False
+                        self.velocity_y=0.0
+                    else:
+                        self.velocity_y=0.0
+
+            if self._ground_check():
+                self.grounded=True
+                self.jumping=False
+                self.air_time=0.0
+                self.velocity_y=min(0.0,self.velocity_y)
             else:
-                self.owner.y=old_y
-                self.velocity_y=0.0
-        else:
-            # Downward probe prevents grounded state from flickering between frames.
-            self.owner.y-=0.03
-            for other in tuple(self.owner._engine._objects):
-                if other is self.owner or not other.collider.enabled or other.collider.is_trigger:
-                    continue
-                if Collision(self.owner,other) and self.velocity_y<=0:
-                    self.owner.y=other.collider.max.y+self.owner.collider.size.y*.5
-                    self.velocity_y=0.0
-                    self.grounded=True
-                    break
-            else:
-                self.owner.y+=0.03
+                self.grounded=False
+                self.air_time+=frame_dt
 
-        target_y=self.owner.y+self.height
-        if self.third_person:
-            behind=forward*-self.distance
-            camera.position=(self.owner.x+behind.x,target_y+0.25,self.owner.z+behind.z)
-            camera.look_at((self.owner.x,self.owner.y+self.height*.55,self.owner.z))
-        else:
-            camera.position=(self.owner.x,target_y,self.owner.z)
-            camera.rotation=(self._pitch,self._yaw,0)
+        self._camera_update()
 
 
-class CharacterController(FPSController):
-    def __init__(self,owner=None,speed=5.0,jump_speed=6.0,gravity=-18.0):
-        super().__init__(owner,speed=speed,jump_speed=jump_speed,gravity=gravity)
+class CharacterController(Controller):
+    """Compatibility name for the character controller component."""
+    pass
 
 
-class FPS:
-    """Convenience constructor for a ready-to-use FPS/third-person player."""
-    def __new__(cls, model="cube", position=(0,0,0), rotation=(0,0,0),
-                scale=(1,2,1), name="Player", engine=None, scene=None, parent=None,
-                color=None, opacity=None, size=None, third_person=False,
-                speed=5.0, sprint=8.0, jump_speed=7.0, gravity=-18.0,
-                sensitivity=0.18, distance=6.0, height=2.0, **kwargs):
+class ControllerPlayer:
+    """Convenience constructor for a ready-to-use controlled Object."""
+    def __new__(cls,model="cube",position=(0,1,0),rotation=(0,0,0),
+                scale=(1,2,1),name="Player",engine=None,scene=None,parent=None,
+                color=None,opacity=None,size=None,**kwargs):
         from .entity import Object
-
-        # Keep FPS() as an Object, not a separate wrapper type.
         obj=Object(model=model,position=position,rotation=rotation,scale=scale,
-                   name=name,engine=engine,scene=scene,parent=parent)
-        if color is not None:
-            obj.color=color
-        if opacity is not None:
-            obj.opacity=opacity
+                   name=name,engine=engine,scene=scene,parent=parent,color=color,
+                   opacity=1.0 if opacity is None else opacity)
+        controller=Controller(obj,**kwargs)
         if size is not None:
             obj.collider.size=size
-
-        controller=FPSController(
-            obj,speed=speed,sprint=sprint,jump_speed=jump_speed,gravity=gravity,
-            third_person=third_person,sensitivity=sensitivity,distance=distance,height=height
-        )
         obj.add(controller)
         obj.fps_controller=controller
         return obj
