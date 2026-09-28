@@ -37,7 +37,7 @@ class Script(Component):
             self._update()
 
 
-class Controller(Component):
+class ControllerComponent(Component):
     """Ursina-style character controller with first-person camera control."""
 
     def __init__(self,owner=None,height=2.0,speed=5.0,gravity=1.0,
@@ -259,12 +259,12 @@ class Controller(Component):
         self._camera_update()
 
 
-class CharacterController(Controller):
+class CharacterController(ControllerComponent):
     """Compatibility name for the character controller component."""
     pass
 
 
-class ControllerPlayer:
+class Controller:
     """Convenience constructor for a ready-to-use controlled Object."""
     def __new__(cls,model="cube",position=(0,1,0),rotation=(0,0,0),
                 scale=(1,2,1),name="Player",engine=None,scene=None,parent=None,
@@ -273,7 +273,7 @@ class ControllerPlayer:
         obj=Object(model=model,position=position,rotation=rotation,scale=scale,
                    name=name,engine=engine,scene=scene,parent=parent,color=color,
                    opacity=1.0 if opacity is None else opacity)
-        controller=Controller(obj,**kwargs)
+        controller=ControllerComponent(obj,**kwargs)
         if size is not None:
             obj.collider.size=size
         obj.add(controller)
