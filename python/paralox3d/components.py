@@ -335,7 +335,7 @@ class ControllerComponent(Component):
         if self.third_person:
             behind=forward*-self.distance
             camera.position=(
-                self.owner.x+behind.x,
+                self.owner.x,
                 self.owner.y+self.eye_height*0.5,
                 self.owner.z+behind.z
             )
