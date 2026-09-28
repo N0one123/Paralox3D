@@ -155,7 +155,16 @@ public:
         relative_mouse_y_ = 0.0f;
         left_drag_ = false;
         right_drag_ = false;
-        ReleaseCapture();
+
+        // FPS mode hides the cursor visually, but deliberately does NOT
+        // capture, recenter, or otherwise lock the OS mouse.
+        if (mouse_locked_ && !cursor_hidden_) {
+            while (ShowCursor(FALSE) >= 0) {}
+            cursor_hidden_ = true;
+        } else if (!mouse_locked_ && cursor_hidden_) {
+            while (ShowCursor(TRUE) < 0) {}
+            cursor_hidden_ = false;
+        }
     }
 
     bool key_held(int key_code) const override {
@@ -189,6 +198,10 @@ public:
     }
 
     ~Win32OpenGLRenderer() override {
+        if (cursor_hidden_) {
+            while (ShowCursor(TRUE) < 0) {}
+            cursor_hidden_ = false;
+        }
         if (hglrc_) { wglMakeCurrent(nullptr, nullptr); wglDeleteContext(hglrc_); }
         if (hdc_ && hwnd_) ReleaseDC(hwnd_, hdc_);
         if (hwnd_) DestroyWindow(hwnd_);
@@ -467,6 +480,7 @@ private:
     float camera_pitch_ = 0.0f, camera_yaw_ = 0.0f, camera_roll_ = 0.0f;
     bool left_drag_ = false, right_drag_ = false;
     bool mouse_locked_ = false;
+    bool cursor_hidden_ = false;
     int last_mouse_x_ = 0, last_mouse_y_ = 0;
     mutable float relative_mouse_x_ = 0.0f, relative_mouse_y_ = 0.0f;
     int screen_center_x_ = 0, screen_center_y_ = 0;
