@@ -42,7 +42,7 @@ class ControllerComponent(Component):
 
     def __init__(self,owner=None,height=2.0,speed=5.0,gravity=1.0,
                  jump_height=2.0,jump_duration=0.5,fall_after=0.35,
-                 sensitivity=(40.0,40.0),third_person=False,distance=6.0,
+                 sensitivity=(0.25,0.25),third_person=False,distance=6.0,
                  eye_height=None,step_height=0.5,sprint=False,sprint_speed=None,
                  sprint_key="shift",jump_speed=None,mouse_sensitivity=None):
         super().__init__(owner)
