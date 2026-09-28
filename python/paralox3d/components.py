@@ -74,9 +74,19 @@ class FPSController(Component):
         return Vec3(math.sin(yaw),0,-math.cos(yaw)), Vec3(math.cos(yaw),0,math.sin(yaw))
 
     def _blocked(self):
+        # Horizontal movement must not be blocked merely because the player
+        # is standing on the floor. Only count an obstacle when the collider
+        # volumes have real vertical overlap.
         from .collision import Collision
+        player_min=self.owner.collider.min
+        player_max=self.owner.collider.max
         for other in tuple(self.owner._engine._objects):
             if other is self.owner or not other.collider.enabled or other.collider.is_trigger:
+                continue
+            other_min=other.collider.min
+            other_max=other.collider.max
+            vertical_overlap=min(player_max.y,other_max.y)-max(player_min.y,other_min.y)
+            if vertical_overlap <= 1e-5:
                 continue
             if Collision(self.owner,other):
                 return True
