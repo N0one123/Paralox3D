@@ -3,13 +3,14 @@
 
 #include <cstdint>
 #include <memory>
-#include <vector>
+#include <unordered_map>
 
 struct Transform { float x=0.0f,y=0.0f,z=0.0f; float sx=1.0f,sy=1.0f,sz=1.0f; float pitch=0.0f,yaw=0.0f,roll=0.0f; float r=1.0f,g=1.0f,b=1.0f,a=1.0f; bool enabled=true,visible=true,alive=true; };
 
 struct P3DEngine {
     int width=1280, height=720;
-    std::vector<Transform> transforms;
+    std::unordered_map<uint32_t, Transform> transforms;
+    uint32_t next_entity_id=1;
     std::unique_ptr<Renderer> renderer;
     bool running=false;
 };
@@ -34,26 +35,29 @@ void p3d_engine_destroy(P3DEngine* engine) { delete engine; }
 
 uint32_t p3d_entity_create(P3DEngine* engine) {
     if (!engine) return 0;
-    engine->transforms.emplace_back();
-    return static_cast<uint32_t>(engine->transforms.size());
+    const uint32_t id=engine->next_entity_id++;
+    engine->transforms.emplace(id, Transform{});
+    return id;
 }
 
 void p3d_entity_destroy(P3DEngine* engine, uint32_t entity) {
-    if (!engine || entity == 0 || entity > engine->transforms.size()) return;
-    engine->transforms[entity - 1].alive = false;
-    engine->transforms[entity - 1].enabled = false;
-    engine->transforms[entity - 1].visible = false;
+    if (!engine || entity == 0) return;
+    auto it=engine->transforms.find(entity);
+    if (it==engine->transforms.end()) return;
+    engine->transforms.erase(it);
 }
 
 void p3d_entity_set_position(P3DEngine* engine, uint32_t entity,
                              float x, float y, float z) {
-    if (!engine || entity == 0 || entity > engine->transforms.size()) return;
-    auto& t = engine->transforms[entity - 1];
+    if (!engine || entity == 0) return;
+    auto it=engine->transforms.find(entity);
+    if (it==engine->transforms.end()) return;
+    auto& t=it->second;
     if (!t.alive) return;
     t.x=x; t.y=y; t.z=z;
 }
 
-void p3d_entity_set_rotation(P3DEngine* engine,uint32_t entity,float pitch,float yaw,float roll){ if(!engine||!entity||entity>engine->transforms.size())return; auto& t=engine->transforms[entity-1];if(!t.alive)return;t.pitch=pitch;t.yaw=yaw;t.roll=roll; }
+void p3d_entity_set_rotation(P3DEngine* engine,uint32_t entity,float pitch,float yaw,float roll){ if(!engine||!entity)return;auto it=engine->transforms.find(entity);if(it==engine->transforms.end())return;auto& t=it->second;if(!t.alive)return;t.pitch=pitch;t.yaw=yaw;t.roll=roll; }
 void p3d_entity_set_color(P3DEngine* engine,uint32_t entity,float r,float g,float b,float a){ if(!engine||!entity||entity>engine->transforms.size())return; auto& t=engine->transforms[entity-1];if(!t.alive)return;t.r=r;t.g=g;t.b=b;t.a=a; }
 void p3d_entity_set_enabled(P3DEngine* engine,uint32_t entity,int enabled,int visible){ if(!engine||!entity||entity>engine->transforms.size())return; auto& t=engine->transforms[entity-1];if(!t.alive)return;t.enabled=enabled!=0;t.visible=visible!=0; }
 void p3d_mouse_state(P3DEngine* engine,float* x,float* y,int* buttons){ if(!engine||!engine->renderer)return;engine->renderer->mouse_state(*x,*y,*buttons); }
@@ -102,7 +106,8 @@ int p3d_engine_step(P3DEngine* engine) {
         engine->running = false;
         return 0;
     }
-    for (const auto& t : engine->transforms) {
+    for (const auto& entry : engine->transforms) {
+        const auto& t=entry.second;
         if (!t.alive) continue;
         engine->renderer->draw_cube(t.x,t.y,t.z,t.sx,t.sy,t.sz,t.pitch,t.yaw,t.roll,t.r,t.g,t.b,t.a,t.visible);
     }
