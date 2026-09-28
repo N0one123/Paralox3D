@@ -50,7 +50,6 @@ void p3d_entity_set_color(P3DEngine* engine,uint32_t entity,float r,float g,floa
 void p3d_entity_set_enabled(P3DEngine* engine,uint32_t entity,int enabled,int visible){ if(!engine||!entity||entity>engine->transforms.size())return; auto& t=engine->transforms[entity-1];t.enabled=enabled!=0;t.visible=visible!=0; }
 void p3d_mouse_state(P3DEngine* engine,float* x,float* y,int* buttons){ if(!engine||!engine->renderer)return;engine->renderer->mouse_state(*x,*y,*buttons); }
 void p3d_mouse_set_locked(P3DEngine* engine,int locked){ if(!engine||!engine->renderer)return;engine->renderer->mouse_set_locked(locked!=0); }
-void p3d_mouse_set_locked(P3DEngine* engine,int locked){ if(!engine||!engine->renderer)return;engine->renderer->mouse_set_locked(locked!=0); }
 void p3d_entity_set_scale(P3DEngine* engine, uint32_t entity, float x, float y, float z) {
     if (!engine || entity == 0 || entity > engine->transforms.size()) return;
     auto& t = engine->transforms[entity - 1];
