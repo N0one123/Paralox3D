@@ -15,6 +15,16 @@ from .collision import _dispatch_collision_events
 _default_engine = None
 
 
+def _report_error(error):
+    """Show a friendly engine error, with the full traceback in developer mode."""
+    import traceback
+
+    message=str(error).strip() or error.__class__.__name__
+    print(f"Paralox3D Error: {message}")
+    if modes.developer:
+        traceback.print_exc()
+
+
 def get_default_engine():
     global _default_engine
     if _default_engine is None:
@@ -283,9 +293,17 @@ class Engine:
             if modes.camera:
                 camera._update_controls(mouse)
 
-            self.update()
-            _dispatch_collision_events(self)
-            _default_input._end_frame()
+            try:
+                self.update()
+                _dispatch_collision_events(self)
+            except Exception as error:
+                _report_error(error)
+                self._running = False
+            finally:
+                _default_input._end_frame()
+
+            if not self._running:
+                break
 
             if self.max_fps:
                 target = 1.0 / self.max_fps
