@@ -323,8 +323,10 @@ class ControllerComponent(Component):
         from .math import Vec3
 
         yaw=math.radians(self._yaw)
-        # Match the Paralox3D camera convention: yaw 0 looks down -Z.
-        forward=Vec3(math.sin(yaw),0,-math.cos(yaw))
+        # The native renderer mirrors world Z after applying the camera
+        # transform, so yaw 0 looks along +Z in world space.
+        # Keep movement aligned with exactly what the player sees.
+        forward=Vec3(math.sin(yaw),0,math.cos(yaw))
         right=Vec3(math.cos(yaw),0,math.sin(yaw))
         return forward,right
 
