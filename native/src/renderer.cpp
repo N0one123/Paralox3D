@@ -165,6 +165,12 @@ public:
                 ((GetAsyncKeyState(VK_MBUTTON)&0x8000)?4:0);
     }
 
+    float mouse_wheel() const override {
+        const float value = mouse_wheel_;
+        mouse_wheel_ = 0.0f;
+        return value;
+    }
+
     void mouse_set_locked(bool locked) override {
         mouse_locked_ = locked;
         relative_mouse_x_ = 0.0f;
@@ -368,6 +374,10 @@ private:
                 PostQuitMessage(0);
                 return 0;
             }
+            if (msg == WM_MOUSEWHEEL) {
+                self->mouse_wheel_ += static_cast<float>(GET_WHEEL_DELTA_WPARAM(wparam)) / static_cast<float>(WHEEL_DELTA);
+                return 0;
+            }
             if (msg == WM_MOUSEMOVE) {
                 const int x = static_cast<int>(static_cast<short>(LOWORD(lparam)));
                 const int y = static_cast<int>(static_cast<short>(HIWORD(lparam)));
@@ -425,6 +435,7 @@ private:
     float camera_pitch_ = 0.0f, camera_yaw_ = 0.0f, camera_roll_ = 0.0f;
     bool mouse_locked_ = false;
     bool cursor_hidden_ = false;
+    mutable float mouse_wheel_ = 0.0f;
     mutable int last_mouse_x_ = 0, last_mouse_y_ = 0;
     mutable float relative_mouse_x_ = 0.0f, relative_mouse_y_ = 0.0f;
     int screen_center_x_ = 0, screen_center_y_ = 0;
