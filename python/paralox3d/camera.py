@@ -1,6 +1,7 @@
 """Simple built-in camera for Paralox3D."""
 
 from .math import Vec3
+import math
 
 
 class Camera:
@@ -94,9 +95,38 @@ class Camera:
         self.y += y
         self.z += z
 
-    def look_at(self, target):
-        import math
+    def _update_controls(self, mouse):
+        """Update the built-in click-and-drag camera controls."""
+        if mouse.left:
+            self.yaw += mouse.dx * 0.25
+            self.pitch += mouse.dy * 0.25
+            self.pitch = max(-89.0, min(89.0, self.pitch))
 
+        if mouse.right:
+            yaw = math.radians(self.yaw)
+            pitch = math.radians(self.pitch)
+            roll = math.radians(self.roll)
+
+            cy, sy = math.cos(yaw), math.sin(yaw)
+            cp, sp = math.cos(pitch), math.sin(pitch)
+            cr, sr = math.cos(roll), math.sin(roll)
+
+            right = Vec3(
+                cy * cr + sy * sp * sr,
+                cp * sr,
+                -sy * cr + cy * sp * sr,
+            )
+            up = Vec3(
+                -cy * sr + sy * sp * cr,
+                cp * cr,
+                sy * sr + cy * sp * cr,
+            )
+
+            pan_speed = 0.0065
+            self.position = self.position - right * (mouse.dx * pan_speed)
+            self.position = self.position + up * (mouse.dy * pan_speed)
+
+    def look_at(self, target):
         # Accept either Vec3 or a plain (x, y, z) tuple/list.
         if not hasattr(target, "x"):
             target = Vec3(*target)
