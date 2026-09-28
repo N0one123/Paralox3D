@@ -156,6 +156,16 @@ public:
         left_drag_ = false;
         right_drag_ = false;
 
+        // Establish the current cursor position as the relative-input baseline.
+        // This does not move or capture the OS cursor.
+        if (mouse_locked_) {
+            POINT point{};
+            if (GetCursorPos(&point) && ScreenToClient(hwnd_, &point)) {
+                last_mouse_x_ = point.x;
+                last_mouse_y_ = point.y;
+            }
+        }
+
         // FPS mode hides the cursor visually, but deliberately does NOT
         // capture, recenter, or otherwise lock the OS mouse.
         if (mouse_locked_ && !cursor_hidden_) {
