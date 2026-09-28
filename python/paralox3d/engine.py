@@ -262,6 +262,8 @@ class Engine:
             else:
                 mouse._sync(mouse_state)
 
+            mouse._sync_wheel(self._native.p3d_mouse_wheel(engine_ptr))
+
             if modes.camera:
                 camera._update_controls(mouse)
 
