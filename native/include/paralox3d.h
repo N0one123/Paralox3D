@@ -21,6 +21,7 @@ typedef struct P3DEngine P3DEngine;
 P3D_API P3DEngine* p3d_engine_create(int width, int height, const char* title);
 P3D_API void p3d_engine_destroy(P3DEngine* engine);
 P3D_API uint32_t p3d_entity_create(P3DEngine* engine);
+P3D_API void p3d_entity_destroy(P3DEngine* engine, uint32_t entity);
 P3D_API void p3d_entity_set_position(P3DEngine* engine, uint32_t entity, float x, float y, float z);
 P3D_API void p3d_entity_set_scale(P3DEngine* engine, uint32_t entity, float x, float y, float z);
 P3D_API void p3d_entity_set_rotation(P3DEngine* engine, uint32_t entity, float pitch, float yaw, float roll);
