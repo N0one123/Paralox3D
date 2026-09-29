@@ -42,15 +42,16 @@ class Object:
     @property
     def enabled(self):return self._enabled
     @enabled.setter
-    def enabled(self,v):self._enabled=bool(v);self._push()
+    def enabled(self,v):
+        self._enabled=bool(v)
+        self._last_action="enabled" if self._enabled else "disabled"
+        self._push()
 
     def enable(self):
-        self._last_action="enabled"
         self.enabled=True
         return self
 
     def disable(self):
-        self._last_action="disabled"
         self.enabled=False
         return self
     @property
