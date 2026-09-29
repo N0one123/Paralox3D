@@ -262,7 +262,7 @@ def _analysis(error):
         _add_reason(code, "Check whether the Object was disabled or destroyed before this line.")
     if "collider" in source:
         _add_reason(code, "Check that the Object still has a Collider before using it.")
-    if any(x in source for x in ("Collision(", "raycast(", "boxcast(", "spherecast(", "overlap_"))):
+    if any(x in source for x in ("Collision(", "raycast(", "boxcast(", "spherecast(", "overlap_")):
         _add_reason(code, "Check every Object supplied to this collision or spatial query.")
     if "None" in source:
         _add_reason(code, "Trace where the None value on this line came from.")
