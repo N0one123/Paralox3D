@@ -43,6 +43,14 @@ class Object:
     def enabled(self):return self._enabled
     @enabled.setter
     def enabled(self,v):self._enabled=bool(v);self._push()
+
+    def enable(self):
+        self.enabled=True
+        return self
+
+    def disable(self):
+        self.enabled=False
+        return self
     @property
     def visible(self):return self._visible
     @visible.setter
