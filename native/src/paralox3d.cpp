@@ -111,7 +111,7 @@ int p3d_engine_step(P3DEngine* engine) {
     for (const auto& entry : engine->transforms) {
         const auto& t=entry.second;
         if (!t.alive) continue;
-        engine->renderer->draw_cube(t.x,t.y,t.z,t.sx,t.sy,t.sz,t.pitch,t.yaw,t.roll,t.r,t.g,t.b,t.a,t.visible);
+        engine->renderer->draw_cube(t.x,t.y,t.z,t.sx,t.sy,t.sz,t.pitch,t.yaw,t.roll,t.r,t.g,t.b,t.a,t.enabled && t.visible);
     }
     engine->renderer->end_frame();
     engine->running = engine->renderer->running();
