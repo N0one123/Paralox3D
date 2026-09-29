@@ -51,14 +51,27 @@ def _overlaps(a,b):
     B,bM=b.min,b.max
     return A.x<=bM.x and aM.x>=B.x and A.y<=bM.y and aM.y>=B.y and A.z<=bM.z and aM.z>=B.z
 
+def _collision_collider(obj, argument_name):
+    if not hasattr(obj, "collider"):
+        raise TypeError(f"Collision() expects an Object for {argument_name}.")
+    collider = getattr(obj, "collider", None)
+    if collider is None:
+        name = getattr(obj, "name", argument_name)
+        if getattr(obj, "_destroyed", False):
+            raise RuntimeError(
+                f"Collision() cannot use destroyed Object '{name}' for {argument_name}."
+            )
+        raise RuntimeError(
+            f"Collision() cannot use Object '{name}' because its collider is missing."
+        )
+    return collider
+
 def Collision(a,b=None):
-    if not hasattr(a,"collider"):
-        raise TypeError("Collision() expects an Object.")
+    a_collider = _collision_collider(a, "a")
     if b is not None:
-        if not hasattr(b,"collider"):
-            raise TypeError("Collision() expects Objects.")
-        return _overlaps(a.collider,b.collider)
-    return [o for o in a._engine._objects if o is not a and _overlaps(a.collider,o.collider)]
+        b_collider = _collision_collider(b, "b")
+        return _overlaps(a_collider,b_collider)
+    return [o for o in a._engine._objects if o is not a and o.collider is not None and _overlaps(a_collider,o.collider)]
 
 def _dispatch_collision_events(engine):
     current=set()
