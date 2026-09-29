@@ -114,7 +114,7 @@ def raycast(origin,direction,distance=1000,ignore=()):
     if direction.length_squared()==0: return None
     best=None
     for o in get_default_engine()._objects:
-        if o in ignore or not o.collider.enabled: continue
+        if o in ignore or not o.enabled or not o.collider.enabled: continue
         hit=_ray(origin,direction,o.collider.min,o.collider.max,distance)
         if hit and (best is None or hit[0]<best.distance):
             best=RaycastHit(o,origin+direction*hit[0],hit[1],hit[0])
@@ -126,7 +126,7 @@ def boxcast(center,size,direction,distance=1,ignore=()):
     d=(direction if isinstance(direction,Vec3) else Vec3(*direction)).normalized()
     best=None
     for o in __import__("paralox3d").get_default_engine()._objects:
-        if o in ignore or not o.collider.enabled: continue
+        if o in ignore or not o.enabled or not o.collider.enabled: continue
         hit=_ray(c,d,o.collider.min-s*.5,o.collider.max+s*.5,distance)
         if hit and (best is None or hit[0]<best.distance):
             best=RaycastHit(o,c+d*hit[0],hit[1],hit[0])
@@ -140,7 +140,7 @@ def overlap_box(center,size,ignore=()):
     s=size if isinstance(size,Vec3) else Vec3(*size)
     out=[]
     for o in __import__("paralox3d").get_default_engine()._objects:
-        if o in ignore: continue
+        if o in ignore or not o.enabled or not o.collider.enabled: continue
         mn,mx=o.collider.min,o.collider.max
         if c.x-s.x/2<=mx.x and c.x+s.x/2>=mn.x and c.y-s.y/2<=mx.y and c.y+s.y/2>=mn.y and c.z-s.z/2<=mx.z and c.z+s.z/2>=mn.z:
             out.append(o)
@@ -151,7 +151,7 @@ def overlap_sphere(center,radius,ignore=()):
     r=float(radius)
     out=[]
     for o in __import__("paralox3d").get_default_engine()._objects:
-        if o in ignore or not o.collider.enabled: continue
+        if o in ignore or not o.enabled or not o.collider.enabled: continue
         mn,mx=o.collider.min,o.collider.max
         q=(min(max(c.x,mn.x),mx.x),min(max(c.y,mn.y),mx.y),min(max(c.z,mn.z),mx.z))
         if (c.x-q[0])**2+(c.y-q[1])**2+(c.z-q[2])**2<=r*r:
