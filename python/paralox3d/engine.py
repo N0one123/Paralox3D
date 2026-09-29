@@ -294,7 +294,7 @@ class Engine:
                 self.update()
                 _dispatch_collision_events(self)
             except Exception as error:
-                _report_error(error)
+                report_error(error)
                 self._running = False
             finally:
                 _default_input._end_frame()
