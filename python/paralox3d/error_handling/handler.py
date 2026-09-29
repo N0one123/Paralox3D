@@ -9,7 +9,18 @@ import sys
 import traceback
 
 # Exception groups were introduced in Python 3.11. Keep compatibility with older Python versions.
-BaseExceptionGroup = getattr(__builtins__, "BaseExceptionGroup", None)
+try:
+    BaseExceptionGroup = BaseExceptionGroup
+except NameError:
+    BaseExceptionGroup = None
+
+
+class ErrorGroup(Exception):
+    """Compatibility container for multiple errors on Python 3.8-3.10."""
+
+    def __init__(self, errors, message="Multiple errors occurred"):
+        self.exceptions = tuple(errors)
+        super().__init__(message)
 
 from .messages import EXPLANATIONS, SUGGESTIONS
 
@@ -56,7 +67,9 @@ def _specific_message(error):
 
 
 def _is_exception_group(error):
-    return BaseExceptionGroup is not None and isinstance(error, BaseExceptionGroup)
+    return isinstance(error, ErrorGroup) or (
+        BaseExceptionGroup is not None and isinstance(error, BaseExceptionGroup)
+    )
 
 
 def _explain_single(error, include_context=True):
@@ -103,6 +116,9 @@ def _explain_single(error, include_context=True):
 
 def explain_error(error):
     """Return a complete, human-readable explanation for one or many exceptions."""
+    if isinstance(error, (list, tuple)):
+        error = ErrorGroup(error)
+
     if not _is_exception_group(error):
         return _explain_single(error)
 
@@ -139,6 +155,11 @@ def report_error(error, *, traceback_enabled=None):
     if traceback_enabled:
         print("\nFull Python traceback:")
         traceback.print_exception(type(error), error, error.__traceback__)
+
+
+def report_errors(errors, *, traceback_enabled=None):
+    """Report several errors together on every supported Python version."""
+    report_error(ErrorGroup(errors), traceback_enabled=traceback_enabled)
 
 
 def _uncaught_exception_hook(exc_type, exc_value, exc_traceback):
