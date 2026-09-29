@@ -6,6 +6,7 @@ It never needs an internet connection or an external AI service.
 
 import difflib
 import linecache
+import os
 import re
 import sys
 import traceback
@@ -39,6 +40,15 @@ _P3D_TERMS = (
 )
 
 
+def _is_internal_path(filename):
+    try:
+        package_root = os.path.normcase(os.path.abspath(os.path.dirname(os.path.dirname(__file__))))
+        candidate = os.path.normcase(os.path.abspath(filename))
+        return os.path.commonpath([package_root, candidate]) == package_root
+    except Exception:
+        return False
+
+
 def _exception_location(error):
     tb = error.__traceback__
     if tb is None:
@@ -47,7 +57,7 @@ def _exception_location(error):
     if not frames:
         return None
 
-    candidates = [f for f in frames if "paralox3d" not in f.filename.lower()]
+    candidates = [f for f in frames if not _is_internal_path(f.filename)]
     last = candidates[-1] if candidates else frames[-1]
     source = linecache.getline(last.filename, last.lineno).strip()
     return last.filename, last.lineno, last.name, source
@@ -61,7 +71,7 @@ def _traceback_frame(error):
     candidates = []
     while tb is not None:
         frame = tb.tb_frame
-        if "paralox3d" not in frame.f_code.co_filename.lower():
+        if not _is_internal_path(frame.f_code.co_filename):
             candidates.append(frame)
         tb = tb.tb_next
     return candidates[-1] if candidates else error.__traceback__.tb_frame
@@ -165,18 +175,55 @@ def _runtime_evidence(error):
     return evidence
 
 
-def _possible_reasons(error):
-    """Reason over Python, Paralox3D, source code, and live runtime evidence."""
-    py, p3d, code = [], [], []
-    message = str(error).lower()
+def _analysis(error):
+    """Build focused conclusions from the error, source, and live runtime."""
     location = _exception_location(error)
     source = location[3] if location else ""
-    context = _source_context(error).lower()
+    context = _source_context(error)
+    context_lower = context.lower()
+    message = str(error).strip()
     runtime = _runtime_evidence(error)
+    what_happened = None
+    likely = []
+    fixes = []
 
-    # Keep a useful Python-side explanation, but avoid dumping generic noise.
-    if isinstance(error, AttributeError) and ("nonetype" in message or "none" in message):
-        _add_reason(py, "A function, lookup, or previous assignment may have produced None instead of the object you expected.")
+    if isinstance(error, RuntimeError) and "Collision() cannot use destroyed Object" in message:
+        match = re.search(r"destroyed Object ['\"](.+?)['\"] for ([ab])", message)
+        object_name = match.group(1) if match else "the Object"
+        what_happened = f"Collision() was called with '{object_name}', but {object_name} has already been destroyed."
+        likely.extend([
+            f"{object_name}.destroy() was called before this collision check.",
+            f"The collision check is still running after '{object_name}' was destroyed.",
+        ])
+        fixes.extend([
+            f"Check where '{object_name}' is destroyed and stop collision processing for it afterward.",
+            "Move the collision check so it only runs while the involved Objects are still alive.",
+        ])
+    elif isinstance(error, RuntimeError) and "Collision() cannot use Object" in message and "collider is missing" in message:
+        match = re.search(r"Object ['\"](.+?)['\"]", message)
+        object_name = match.group(1) if match else "the Object"
+        what_happened = f"Collision() was called with '{object_name}', but that Object no longer has a Collider."
+        likely.append(f"The Collider is unavailable for '{object_name}'.")
+        fixes.append(f"Check the lifecycle of '{object_name}' before passing it to Collision().")
+    elif isinstance(error, AttributeError) and ("nonetype" in message.lower() or "none" in message.lower()):
+        destroyed = [x for x in runtime if "marked destroyed" in x]
+        missing = [x for x in runtime if "collider is currently missing" in x]
+        if destroyed:
+            what_happened = "An Object reference is being used after the Object was destroyed."
+            likely.append("A previous destroy() call left the reference pointing to an Object whose engine state is no longer live.")
+            fixes.append("Stop using that Object after destroy(), or keep the operation inside the Object's active lifetime.")
+        elif missing:
+            what_happened = "Code is trying to use an Object whose Collider is no longer available."
+            likely.append("The Object was likely destroyed before this operation reached it.")
+            fixes.append("Check the Object's lifecycle before using its Collider or collision-related properties.")
+        elif re.search(r"\bfind(?:_all|_with_tag|_by_id)?\s*\(", context_lower):
+            what_happened = "A lookup returned None, and the code then tried to use it as an Object."
+            likely.append("The requested Object may not exist or may no longer be registered in the scene.")
+            fixes.append("Check the result of the find operation before accessing its properties.")
+
+    py, p3d, code = [], [], []
+    if isinstance(error, AttributeError) and ("nonetype" in message.lower() or "none" in message.lower()):
+        _add_reason(py, "A function, lookup, or previous assignment produced None instead of the object you expected.")
     elif isinstance(error, NameError):
         _add_reason(py, "A name may be misspelled, out of scope, or used before it was defined.")
         name = getattr(error, "name", None)
@@ -189,24 +236,23 @@ def _possible_reasons(error):
         _add_reason(py, "A function, operator, or constructor received an argument or value it does not accept.")
     elif isinstance(error, ValueError):
         _add_reason(py, "The value has an acceptable general type, but its actual value is invalid for this operation.")
-    else:
+    elif not what_happened:
         _add_reason(py, "The operation reached a state or value that Python could not use as requested.")
 
-    p3d_signal = any(term.lower() in context for term in _P3D_TERMS) or "paralox3d" in message
+    p3d_signal = any(term.lower() in context_lower for term in _P3D_TERMS) or "paralox3d" in message.lower()
     if p3d_signal:
-        if "destroy" in context:
+        if "destroy" in context_lower:
             _add_reason(p3d, "An Object may have been destroyed before another part of the game tried to use it.")
-        if re.search(r"\bfind(?:_all|_with_tag|_by_id)?\s*\(", context):
+        if re.search(r"\bfind(?:_all|_with_tag|_by_id)?\s*\(", context_lower):
             _add_reason(p3d, "A find operation can return None or no matching Objects when the requested Object does not exist.")
-        if "collider" in context:
+        if "collider" in context_lower:
             _add_reason(p3d, "A Collider can disappear when its Object is destroyed, so collision code should use a live Object.")
-        if "disable" in context or ".enabled" in context:
+        if "disable" in context_lower or ".enabled" in context_lower:
             _add_reason(p3d, "An Object may be disabled, or it may have been destroyed rather than merely disabled.")
-        if any(x in context for x in ("collision", "raycast", "boxcast", "spherecast", "overlap_")):
-            _add_reason(p3d, "A spatial query may be receiving an invalid, destroyed, or missing Object.")
-        if runtime:
-            for item in runtime:
-                _add_reason(p3d, item)
+        if any(x in context_lower for x in ("collision", "raycast", "boxcast", "spherecast", "overlap_")):
+            _add_reason(p3d, "A spatial query should only receive live, valid Objects.")
+        for item in runtime:
+            _add_reason(p3d, item)
 
     if "destroy()" in source:
         _add_reason(code, "Check whether the same Object is used again after destroy().")
@@ -216,13 +262,22 @@ def _possible_reasons(error):
         _add_reason(code, "Check whether the Object was disabled or destroyed before this line.")
     if "collider" in source:
         _add_reason(code, "Check that the Object still has a Collider before using it.")
-    if any(x in source for x in ("Collision(", "raycast(", "boxcast(", "spherecast(", "overlap_")):
+    if any(x in source for x in ("Collision(", "raycast(", "boxcast(", "spherecast(", "overlap_"))):
         _add_reason(code, "Check every Object supplied to this collision or spatial query.")
     if "None" in source:
         _add_reason(code, "Trace where the None value on this line came from.")
 
-    return py[:4], p3d[:6], code[:5]
+    for item in runtime:
+        if "marked destroyed" in item and not any(item == x for x in likely):
+            likely.append(item)
 
+    return what_happened, likely[:4], fixes[:3], py[:3], p3d[:6], code[:5]
+
+
+def _possible_reasons(error):
+    """Return categorized possibilities for compatibility with the public analyzer."""
+    _, _, _, py, p3d, code = _analysis(error)
+    return py, p3d, code
 
 def _possible_reasons_text(error):
     py, p3d, code = _possible_reasons(error)
@@ -260,15 +315,23 @@ def _explain_single(error, include_context=True):
         f"Python says: {specific}",
     ]
 
+    what_happened, likely, fixes, _, _, _ = _analysis(error)
     runtime = _runtime_evidence(error)
+    if what_happened:
+        parts.append(f"What happened: {what_happened}")
     if runtime:
         parts.append("What Paralox3D observed:\n" + "\n".join(f"- {item}" for item in runtime))
+    if likely:
+        parts.append("Likely Cause:\n" + "\n".join(f"- {item}" for item in likely))
 
     reasons = _possible_reasons_text(error)
     if reasons:
         parts.append(reasons)
 
-    parts.append(f"What to check: {suggestion}")
+    if fixes:
+        parts.append("Suggested Fix:\n" + "\n".join(f"- {item}" for item in fixes))
+    else:
+        parts.append(f"What to check: {suggestion}")
 
     if location:
         parts.append(f"Where it happened: {location}")
