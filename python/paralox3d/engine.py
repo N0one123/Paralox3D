@@ -335,8 +335,10 @@ class Engine:
             if modes.developer:
                 values = []
                 for obj in self._objects:
+                    if not obj.enabled or not obj.collider.enabled:
+                        continue
                     minimum, maximum = obj.collider.min, obj.collider.max
-                    values.extend((minimum.x, minimum.y, minimum.z, maximum.x, maximum.y, maximum.z))
+                    values.extend((minimum.x, minimum.y, minimum.z, maximum.x, maximum.y, maximum.z)
                 bounds = (ctypes.c_float * len(values))(*values) if values else None
                 self._native.p3d_engine_set_debug_colliders(engine_ptr, bounds, len(self._objects))
             else:
