@@ -8,6 +8,9 @@ import linecache
 import sys
 import traceback
 
+# Exception groups were introduced in Python 3.11. Keep compatibility with older Python versions.
+BaseExceptionGroup = getattr(__builtins__, "BaseExceptionGroup", None)
+
 from .messages import EXPLANATIONS, SUGGESTIONS
 
 _INSTALLED = False
@@ -52,8 +55,12 @@ def _specific_message(error):
     return message or error.__class__.__name__
 
 
-def explain_error(error):
-    """Return a complete, human-readable explanation for an exception."""
+def _is_exception_group(error):
+    return BaseExceptionGroup is not None and isinstance(error, BaseExceptionGroup)
+
+
+def _explain_single(error, include_context=True):
+    """Explain one exception without expanding an exception group."""
     error_type = error.__class__.__name__
     explanation = EXPLANATIONS.get(
         error_type,
@@ -78,24 +85,42 @@ def explain_error(error):
     if location:
         parts.append(f"Where it happened: {location}")
 
-    if error.__cause__ is not None:
-        parts.append(
-            f"Underlying cause: {error.__cause__.__class__.__name__}: "
-            f"{str(error.__cause__).strip() or '(no message)'}"
-        )
-    elif error.__context__ is not None and not error.__suppress_context__:
-        parts.append(
-            f"While handling another error, Python also encountered: "
-            f"{error.__context__.__class__.__name__}: "
-            f"{str(error.__context__).strip() or '(no message)'}"
-        )
+    if include_context:
+        if error.__cause__ is not None:
+            parts.append(
+                f"Underlying cause: {error.__cause__.__class__.__name__}: "
+                f"{str(error.__cause__).strip() or '(no message)'}"
+            )
+        elif error.__context__ is not None and not error.__suppress_context__:
+            parts.append(
+                "While handling another error, Python also encountered: "
+                f"{error.__context__.__class__.__name__}: "
+                f"{str(error.__context__).strip() or '(no message)'}"
+            )
 
     return "\n".join(parts)
 
 
+def explain_error(error):
+    """Return a complete, human-readable explanation for one or many exceptions."""
+    if not _is_exception_group(error):
+        return _explain_single(error)
+
+    errors = list(error.exceptions)
+    parts = [
+        "Multiple errors occurred during the same operation.",
+        f"Error count: {len(errors)}",
+    ]
+
+    for index, child in enumerate(errors, 1):
+        parts.append(f"\n--- Error {index} of {len(errors)} ---")
+        parts.append(explain_error(child))
+
+    return "\n".join(parts)
+
 def _print_header(error):
     print("\n=== Paralox3D Error Engine ===")
-    print(f"Error type: {error.__class__.__name__}")
+    print("Error type: Multiple errors" if _is_exception_group(error) else f"Error type: {error.__class__.__name__}")
     print(explain_error(error))
     print("================================")
 
