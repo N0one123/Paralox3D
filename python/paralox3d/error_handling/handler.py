@@ -240,7 +240,7 @@ def _analysis(error):
         _add_reason(py, "The operation reached a state or value that Python could not use as requested.")
 
     p3d_signal = any(term.lower() in context_lower for term in _P3D_TERMS) or "paralox3d" in message.lower()
-    if p3d_signal:
+    if p3d_signal and not what_happened:
         if "destroy" in context_lower:
             _add_reason(p3d, "An Object may have been destroyed before another part of the game tried to use it.")
         if re.search(r"\bfind(?:_all|_with_tag|_by_id)?\s*\(", context_lower):
