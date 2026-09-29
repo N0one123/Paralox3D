@@ -4,6 +4,7 @@ This module uses Python's standard library plus Paralox3D runtime knowledge.
 It never needs an internet connection or an external AI service.
 """
 
+import ast
 import difflib
 import linecache
 import os
@@ -29,6 +30,104 @@ from .messages import EXPLANATIONS, SUGGESTIONS
 
 _INSTALLED = False
 _PREVIOUS_HOOK = None
+
+_SKIP_DIRS = {
+    ".git", "__pycache__", ".venv", "venv", "env", "build", "dist",
+    ".mypy_cache", ".pytest_cache", "node_modules",
+}
+
+
+def _project_python_files(filename):
+    """Find the user's project Python files for offline static analysis."""
+    if not filename:
+        return []
+    try:
+        current = os.path.dirname(os.path.abspath(filename))
+        root = None
+        for _ in range(6):
+            if any(os.path.exists(os.path.join(current, marker))
+                   for marker in (".git", "pyproject.toml", "setup.py", "setup.cfg")):
+                root = current
+                break
+            parent = os.path.dirname(current)
+            if parent == current:
+                break
+            current = parent
+        root = root or os.path.dirname(os.path.abspath(filename))
+
+        result = []
+        for base, dirs, files in os.walk(root):
+            dirs[:] = [d for d in dirs if d not in _SKIP_DIRS and not d.startswith(".")]
+            for name in files:
+                if name.endswith(".py"):
+                    result.append(os.path.join(base, name))
+                    if len(result) >= 250:
+                        return result
+        return result
+    except Exception:
+        return []
+
+
+def _static_project_evidence(error):
+    """Use project source to distinguish typos from real scope errors."""
+    location = _exception_location(error)
+    name = getattr(error, "name", None)
+    if location is None or not name:
+        return []
+
+    definitions = {}
+    for path in _project_python_files(location[0]):
+        try:
+            with open(path, "r", encoding="utf-8") as handle:
+                tree = ast.parse(handle.read(), filename=path)
+        except (OSError, UnicodeError, SyntaxError):
+            continue
+
+        class Visitor(ast.NodeVisitor):
+            def visit_Name(self, node):
+                if isinstance(node.ctx, (ast.Store, ast.Del)):
+                    definitions.setdefault(node.id, []).append((path, node.lineno, "variable"))
+                self.generic_visit(node)
+
+            def visit_FunctionDef(self, node):
+                definitions.setdefault(node.name, []).append((path, node.lineno, "function"))
+                self.generic_visit(node)
+
+            visit_AsyncFunctionDef = visit_FunctionDef
+
+            def visit_ClassDef(self, node):
+                definitions.setdefault(node.name, []).append((path, node.lineno, "class"))
+                self.generic_visit(node)
+
+            def visit_Import(self, node):
+                for alias in node.names:
+                    value = alias.asname or alias.name.split(".")[0]
+                    definitions.setdefault(value, []).append((path, node.lineno, "import"))
+                self.generic_visit(node)
+
+            def visit_ImportFrom(self, node):
+                for alias in node.names:
+                    value = alias.asname or alias.name
+                    definitions.setdefault(value, []).append((path, node.lineno, "import"))
+                self.generic_visit(node)
+
+        Visitor().visit(tree)
+
+    evidence = []
+    if name in definitions:
+        for path, line, kind in definitions[name][:2]:
+            _add_reason(evidence, f"'{name}' is defined at {path}, line {line}, but the failing code cannot see that definition from its current scope.")
+    else:
+        matches = difflib.get_close_matches(name, list(definitions), n=5, cutoff=0.55)
+        for match in matches:
+            path, line, kind = definitions[match][0]
+            _add_reason(evidence, f"'{name}' is not defined in the project, but '{match}' is defined at {path}, line {line}; this is a likely naming typo.")
+        if name.endswith("s") and name[:-1] in definitions:
+            singular = name[:-1]
+            path, line, kind = definitions[singular][0]
+            _add_reason(evidence, f"'{name}' is the plural form of '{singular}', which is defined at {path}, line {line}; check whether the extra 's' was accidental.")
+    return evidence[:8]
+
 
 _P3D_TERMS = (
     "Object", "Entity", "Collider", "Collision", "find", "find_all",
@@ -225,12 +324,23 @@ def _analysis(error):
     if isinstance(error, AttributeError) and ("nonetype" in message.lower() or "none" in message.lower()):
         _add_reason(py, "A function, lookup, or previous assignment produced None instead of the object you expected.")
     elif isinstance(error, NameError):
-        _add_reason(py, "A name may be misspelled, out of scope, or used before it was defined.")
+        _add_reason(py, "Python could not resolve the name in the current scope.")
         name = getattr(error, "name", None)
-        if name:
+        static = _static_project_evidence(error)
+        if static:
+            what_happened = f"Python could not find '{name}', and project-wide source analysis found relevant naming or scope evidence."
+            likely.extend(static[:4])
+            fixes.extend([
+                f"Check every definition and use of '{name}' across the project, especially similarly named variables.",
+                "Fix the name or scope at the source rather than adding another variable just to silence the error.",
+            ])
+            for item in static:
+                _add_reason(code, item)
+        elif name:
             words = re.findall(r"\b[A-Za-z_]\w*\b", context)
             matches = difflib.get_close_matches(name, words, n=3, cutoff=0.75)
             if matches:
+                likely.append(f"Nearby code contains similar name(s): {', '.join(matches)}.")
                 _add_reason(code, f"'{name}' looks similar to nearby name(s): {', '.join(matches)}.")
     elif isinstance(error, TypeError):
         if "'tuple' object is not callable" in message.lower():
