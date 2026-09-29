@@ -34,6 +34,8 @@ _PREVIOUS_HOOK = None
 _SKIP_DIRS = {
     ".git", "__pycache__", ".venv", "venv", "env", "build", "dist",
     ".mypy_cache", ".pytest_cache", "node_modules",
+    ".tox", ".nox", "pypitest", "site-packages", "Scripts",
+    "bin", "include", "lib", "Lib",
 }
 
 
@@ -118,10 +120,12 @@ def _static_project_evidence(error):
         for path, line, kind in definitions[name][:2]:
             _add_reason(evidence, f"'{name}' is defined at {path}, line {line}, but the failing code cannot see that definition from its current scope.")
     else:
-        matches = difflib.get_close_matches(name, list(definitions), n=5, cutoff=0.55)
-        for match in matches:
+        matches = difflib.get_close_matches(name, list(definitions), n=5, cutoff=0.70)
+        same_file = [match for match in matches if any(path == location[0] for path, _, _ in definitions[match])]
+        ordered = same_file + [match for match in matches if match not in same_file]
+        for match in ordered[:3]:
             path, line, kind = definitions[match][0]
-            _add_reason(evidence, f"'{name}' is not defined in the project, but '{match}' is defined at {path}, line {line}; this is a likely naming typo.")
+            _add_reason(evidence, f"'{name}' is not defined here, but '{match}' is defined in the project at {path}, line {line}; this is a likely naming typo.")
         if name.endswith("s") and name[:-1] in definitions:
             singular = name[:-1]
             path, line, kind = definitions[singular][0]
@@ -202,6 +206,17 @@ def _source_context(error):
         if value:
             lines.append(value.rstrip())
     return "\n".join(lines)
+
+
+def _python_name_suggestion(error):
+    """Return Python's own NameError suggestion when available."""
+    if not isinstance(error, NameError):
+        return None
+    marker = "Did you mean: '"
+    message = str(error)
+    if marker not in message:
+        return None
+    return message.split(marker, 1)[1].split("'", 1)[0]
 
 
 def _specific_message(error):
@@ -326,10 +341,33 @@ def _analysis(error):
     elif isinstance(error, NameError):
         _add_reason(py, "Python could not resolve the name in the current scope.")
         name = getattr(error, "name", None)
+        python_suggestion = _python_name_suggestion(error)
         static = _static_project_evidence(error)
+
+        if python_suggestion:
+            what_happened = (
+                f"Python could not find '{name}'. Python itself suggests "
+                f"'{python_suggestion}', which is a strong indication of a naming typo."
+            )
+            likely.append(
+                f"'{name}' is not defined, and Python suggests '{python_suggestion}'."
+            )
+            _add_reason(
+                code,
+                f"Python's NameError analysis suggests '{python_suggestion}' "
+                f"as the intended name for '{name}'."
+            )
+
         if static:
-            what_happened = f"Python could not find '{name}', and project-wide source analysis found relevant naming or scope evidence."
-            likely.extend(static[:4])
+            if python_suggestion:
+                for item in static:
+                    if f"'{python_suggestion}'" in item:
+                        _add_reason(code, item)
+                        likely.append(item)
+            else:
+                likely.extend(static[:3])
+                for item in static[:3]:
+                    _add_reason(code, item)
             fixes.extend([
                 f"Check every definition and use of '{name}' across the project, especially similarly named variables.",
                 "Fix the name or scope at the source rather than adding another variable just to silence the error.",
