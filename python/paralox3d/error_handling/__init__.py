@@ -5,6 +5,6 @@ developers can understand, while preserving the normal traceback when
 developer mode is enabled.
 """
 
-from .handler import install, report_error, explain_error
+from .handler import install, report_error, report_errors, explain_error, ErrorGroup
 
-__all__ = ["install", "report_error", "explain_error"]
+__all__ = ["install", "report_error", "report_errors", "explain_error", "ErrorGroup"]
