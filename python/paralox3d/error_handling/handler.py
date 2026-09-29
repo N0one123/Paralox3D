@@ -144,18 +144,22 @@ def _runtime_evidence(error):
             destroyed = bool(getattr(value, "_destroyed", False))
             collider = getattr(value, "collider", None)
             enabled = getattr(value, "enabled", None)
+            last_action = getattr(value, "_last_action", None)
             if destroyed:
-                evidence.append(
-                    f"{variable} refers to Object '{name}', and that Object is marked destroyed."
-                )
+                detail = f"{variable} refers to Object '{name}', and that Object is marked destroyed."
+                if last_action:
+                    detail += f" Its last recorded lifecycle action was {last_action}."
+                evidence.append(detail)
             elif collider is None:
-                evidence.append(
-                    f"{variable} refers to Object '{name}', but its collider is currently missing."
-                )
+                detail = f"{variable} refers to Object '{name}', but its collider is currently missing."
+                if last_action:
+                    detail += f" Its last recorded lifecycle action was {last_action}."
+                evidence.append(detail)
             elif enabled is False:
-                evidence.append(
-                    f"{variable} refers to Object '{name}', and it is currently disabled."
-                )
+                detail = f"{variable} refers to Object '{name}', and it is currently disabled."
+                if last_action:
+                    detail += f" Its last recorded lifecycle action was {last_action}."
+                evidence.append(detail)
         except Exception:
             continue
     return evidence
