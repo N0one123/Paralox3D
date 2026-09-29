@@ -233,7 +233,17 @@ def _analysis(error):
             if matches:
                 _add_reason(code, f"'{name}' looks similar to nearby name(s): {', '.join(matches)}.")
     elif isinstance(error, TypeError):
-        _add_reason(py, "A function, operator, or constructor received an argument or value it does not accept.")
+        if "'tuple' object is not callable" in message.lower():
+            what_happened = "Code tried to call a tuple as if it were a function."
+            likely.append("The name before the parentheses is holding a tuple value, not a callable function or method.")
+            if re.search(r"\.color\s*\(", source):
+                likely.append("In this line, 'color' is a property containing an RGB tuple, so bird.color(...) tries to call that tuple.")
+                fixes.append("Use 'bird.color = red' instead of 'bird.color(red)'.")
+                fixes.append("Use parentheses only for methods, such as bird.rotate(...); use '=' when assigning a property.")
+            else:
+                fixes.append("Check the value immediately before the parentheses and use assignment if it is a property rather than a method.")
+        else:
+            _add_reason(py, "A function, operator, or constructor received an argument or value it does not accept.")
     elif isinstance(error, ValueError):
         _add_reason(py, "The value has an acceptable general type, but its actual value is invalid for this operation.")
     elif not what_happened:
@@ -249,10 +259,14 @@ def _analysis(error):
             _add_reason(p3d, "A Collider can disappear when its Object is destroyed, so collision code should use a live Object.")
         if "disable" in context_lower or ".enabled" in context_lower:
             _add_reason(p3d, "An Object may be disabled, or it may have been destroyed rather than merely disabled.")
-        if any(x in context_lower for x in ("collision", "raycast", "boxcast", "spherecast", "overlap_")):
+        if any(x in context_lower for x in ("collision", "raycast", "boxcast", "spherecast", "overlap_")) and not ("'tuple' object is not callable" in message.lower()):
             _add_reason(p3d, "A spatial query should only receive live, valid Objects.")
         for item in runtime:
             _add_reason(p3d, item)
+
+    if "'tuple' object is not callable" in message.lower() and re.search(r"\.color\s*\(", source):
+        _add_reason(p3d, "Object.color is a property that stores an RGB tuple, not a callable method.")
+        _add_reason(p3d, "Paralox3D properties are assigned with '=', while methods are invoked with '()'.")
 
     if "destroy()" in source:
         _add_reason(code, "Check whether the same Object is used again after destroy().")
