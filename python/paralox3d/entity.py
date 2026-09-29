@@ -13,7 +13,7 @@ def _rotate(v,r):
     return Vec3(x*cr-y2*sr,x*sr+y2*cr,z2)
 
 class Object:
-    __slots__=("_Object__dict__","controller","_id","_engine","_handle","_model","_position","_rotation","_scale","_components","name","collider","parent","_children","_enabled","_visible","tags","persistent","_local_position","_local_rotation","_local_scale","_color","texture","_opacity","_destroyed")
+    __slots__=("_Object__dict__","controller","_id","_engine","_handle","_model","_position","_rotation","_scale","_components","name","collider","parent","_children","_enabled","_visible","tags","persistent","_last_action","_local_position","_local_rotation","_local_scale","_color","texture","_opacity","_destroyed")
     def __init__(self,model="cube",position=(0,0,0),rotation=(0,0,0),scale=(1,1,1),name=None,engine=None,scene=None,parent=None,color=None,opacity=1.0,texture=None,enabled=True,visible=True):
         from .engine import get_default_engine
         from .scene import current_scene
@@ -28,7 +28,7 @@ class Object:
             if len(color)!=3: raise ValueError("color must be an RGB 3-tuple.")
             self._color=tuple(max(0.0,min(1.0,float(x))) for x in color)
         self.texture=texture; self._opacity=max(0.0,min(1.0,float(opacity))); self._enabled=bool(enabled); self._visible=bool(visible)
-        self.tags=set(); self.persistent=False; self.controller=None; self._destroyed=False
+        self.tags=set(); self.persistent=False; self.controller=None; self._destroyed=False; self._last_action="created"
         self.collider=Collider(self); self._engine.register(self); self._push()
         if parent is not None:self.set_parent(parent)
         target=scene or current_scene()
@@ -45,10 +45,12 @@ class Object:
     def enabled(self,v):self._enabled=bool(v);self._push()
 
     def enable(self):
+        self._last_action="enabled"
         self.enabled=True
         return self
 
     def disable(self):
+        self._last_action="disabled"
         self.enabled=False
         return self
     @property
@@ -149,6 +151,7 @@ class Object:
         if component in self._components:self._components.remove(component);component.on_destroy();component.owner=None
     def destroy(self):
         if self._destroyed:return
+        self._last_action="destroyed"
         for c in tuple(self._children):c.destroy()
         if self.parent and self in self.parent._children:self.parent._children.remove(self)
         for c in tuple(self._components):c.on_destroy()
