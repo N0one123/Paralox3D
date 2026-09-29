@@ -346,10 +346,16 @@ def _analysis(error):
         if "'tuple' object is not callable" in message.lower():
             what_happened = "Code tried to call a tuple as if it were a function."
             likely.append("The name before the parentheses is holding a tuple value, not a callable function or method.")
-            if re.search(r"\.color\s*\(", source):
-                likely.append("In this line, 'color' is a property containing an RGB tuple, so bird.color(...) tries to call that tuple.")
-                fixes.append("Use 'bird.color = red' instead of 'bird.color(red)'.")
-                fixes.append("Use parentheses only for methods, such as bird.rotate(...); use '=' when assigning a property.")
+            color_call = re.search(r"([A-Za-z_]\w*)\.color\s*\(([^)]*)\)", source)
+            if color_call:
+                object_var = color_call.group(1)
+                argument = color_call.group(2).strip() or "the supplied value"
+                likely.append(
+                    f"In this line, '{object_var}.color' is a property containing an RGB tuple, "
+                    f"so '{object_var}.color({argument})' tries to call that tuple."
+                )
+                fixes.append(f"Use '{object_var}.color = {argument}' instead of '{object_var}.color({argument})'.")
+                fixes.append("Use parentheses for methods and '=' for properties.")
             else:
                 fixes.append("Check the value immediately before the parentheses and use assignment if it is a property rather than a method.")
         else:
