@@ -68,8 +68,8 @@ def _source_context(error):
         return ""
     filename, line, _, _ = location
     start = max(1, line - 10)
-    end = min(line + 2, linecache.getline(filename, 10**9) and line + 2)
-    return "\n".join(linecache.getline(filename, n).strip() for n in range(start, end + 1))
+    end = line + 2
+    return "\n".join(linecache.getline(filename, n).strip() for n in range(start, end + 1) if linecache.getline(filename, n))
 
 def _specific_message(error):
     message = str(error).strip()
