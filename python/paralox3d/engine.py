@@ -37,6 +37,7 @@ class Engine:
         self._objects = []
         self._object_id_counter = 0
         self._collision_pairs = set()
+        self._debug_rays = {}
         self._update_callback = None
         self._running = False
         self._camera_active = False
@@ -121,6 +122,8 @@ class Engine:
 
         self._native.p3d_engine_set_debug_colliders.argtypes = [ctypes.c_void_p, ctypes.POINTER(ctypes.c_float), ctypes.c_int]
         self._native.p3d_engine_set_debug_colliders.restype = None
+        self._native.p3d_engine_set_debug_rays.argtypes = [ctypes.c_void_p, ctypes.POINTER(ctypes.c_float), ctypes.c_int]
+        self._native.p3d_engine_set_debug_rays.restype = None
 
         self._native.p3d_camera_set_enabled.argtypes = [
             ctypes.c_void_p, ctypes.c_int
@@ -179,6 +182,13 @@ class Engine:
         if obj in self._objects:
             self._objects.remove(obj)
         self._collision_pairs = {p for p in self._collision_pairs if obj.id not in p}
+        self._debug_rays.pop(obj, None)
+
+    def _debug_raycast(self, start, end, origin_owner=None):
+        if not modes.developer:
+            return
+        key = origin_owner if origin_owner is not None else self
+        self._debug_rays[key] = (start.x, start.y, start.z, end.x, end.y, end.z, time.perf_counter() + 0.3)
 
     def update(self):
         if self._update_callback:
@@ -253,6 +263,17 @@ class Engine:
                 self._native.p3d_engine_set_debug_colliders(engine_ptr, bounds, len(self._objects))
             else:
                 self._native.p3d_engine_set_debug_colliders(engine_ptr, None, 0)
+
+            if modes.developer:
+                now = time.perf_counter()
+                self._debug_rays = {k: v for k, v in self._debug_rays.items() if v[6] > now}
+                values = []
+                for ray in self._debug_rays.values():
+                    values.extend(ray[:6])
+                rays = (ctypes.c_float * len(values))(*values) if values else None
+                self._native.p3d_engine_set_debug_rays(engine_ptr, rays, len(self._debug_rays))
+            else:
+                self._native.p3d_engine_set_debug_rays(engine_ptr, None, 0)
 
             _default_input._sync(
                 lambda key_code: self._native.p3d_input_key_held(

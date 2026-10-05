@@ -102,6 +102,11 @@ void p3d_engine_set_debug_colliders(P3DEngine* engine, const float* bounds, int 
     engine->renderer->set_debug_colliders(bounds, count);
 }
 
+void p3d_engine_set_debug_rays(P3DEngine* engine, const float* rays, int count) {
+    if (!engine || !engine->renderer) return;
+    engine->renderer->set_debug_rays(rays, count);
+}
+
 int p3d_engine_step(P3DEngine* engine) {
     if (!engine || !engine->running || !engine->renderer) return 0;
     if (!engine->renderer->begin_frame()) {

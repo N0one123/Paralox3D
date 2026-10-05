@@ -18,6 +18,7 @@ public:
                                         const char* current_task, int warning_count) = 0;
     virtual bool diagnostics_clicked() = 0;
     virtual void set_debug_colliders(const float* bounds, int count) = 0;
+    virtual void set_debug_rays(const float* rays, int count) = 0;
 };
 
 Renderer* create_platform_renderer();

@@ -120,7 +120,7 @@ public:
     }
 
     void end_frame() override {
-        if (developer_overlay_) draw_debug_colliders();
+        if (developer_overlay_) { draw_debug_colliders(); draw_debug_rays(); }
         SwapBuffers(hdc_);
         if (developer_overlay_) draw_developer_overlay();
     }
@@ -225,6 +225,16 @@ public:
         }
     }
 
+    void set_debug_rays(const float* rays, int count) override {
+        debug_rays_.clear();
+        if (!developer_overlay_ || !rays || count <= 0) return;
+        debug_rays_.reserve(static_cast<size_t>(count));
+        for (int i = 0; i < count; ++i) {
+            const float* r = rays + i * 6;
+            debug_rays_.push_back({r[0], r[1], r[2], r[3], r[4], r[5]});
+        }
+    }
+
     ~Win32OpenGLRenderer() override {
         if (cursor_hidden_) {
             while (ShowCursor(TRUE) < 0) {}
@@ -246,6 +256,25 @@ private:
         float min_x, min_y, min_z;
         float max_x, max_y, max_z;
     };
+
+    struct DebugRay {
+        float start_x, start_y, start_z;
+        float end_x, end_y, end_z;
+    };
+
+    void draw_debug_rays() {
+        if (!developer_overlay_ || debug_rays_.empty()) return;
+        glDisable(GL_DEPTH_TEST);
+        glLineWidth(2.0f);
+        glColor3f(1.0f, 1.0f, 1.0f);
+        glBegin(GL_LINES);
+        for (const auto& r : debug_rays_) {
+            glVertex3f(r.start_x, r.start_y, r.start_z);
+            glVertex3f(r.end_x, r.end_y, r.end_z);
+        }
+        glEnd();
+        glEnable(GL_DEPTH_TEST);
+    }
 
     void draw_debug_colliders() {
         if (!developer_overlay_ || debug_colliders_.empty()) return;
@@ -429,6 +458,7 @@ private:
     int warning_count_ = 0;
     std::string current_task_ = "Idle";
     std::vector<DebugBox> debug_colliders_;
+    std::vector<DebugRay> debug_rays_;
 
     bool camera_enabled_ = false;
     float camera_x_ = 0.0f, camera_y_ = 0.0f, camera_z_ = 0.0f;

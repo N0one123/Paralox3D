@@ -1,8 +1,26 @@
 """High-level scene objects with low-boilerplate properties."""
 from __future__ import annotations
 import math
+import dis
+import inspect
 from .math import Vec3
 from .collision import Collider
+
+def _detect_variable_name():
+    try:
+        caller = inspect.currentframe().f_back
+        for instruction in dis.get_instructions(caller.f_code):
+            if instruction.offset <= caller.f_lasti:
+                continue
+            if instruction.opname in ("STORE_FAST", "STORE_NAME", "STORE_DEREF"):
+                return instruction.argval
+            if instruction.opname.startswith("STORE_"):
+                return None
+            if instruction.opname not in ("CACHE", "EXTENDED_ARG"):
+                break
+    except Exception:
+        pass
+    return None
 
 def _vec(v): return v if isinstance(v,Vec3) else Vec3(*v)
 def _rotate(v,r):
@@ -13,7 +31,7 @@ def _rotate(v,r):
     return Vec3(x*cr-y2*sr,x*sr+y2*cr,z2)
 
 class Object:
-    __slots__=("_Object__dict__","controller","_id","_engine","_handle","_model","_position","_rotation","_scale","_components","name","collider","parent","_children","_enabled","_visible","tags","persistent","_last_action","_local_position","_local_rotation","_local_scale","_color","texture","_opacity","_destroyed")
+    __slots__=("_Object__dict__","controller","_id","_engine","_handle","_model","_position","_rotation","_scale","_components","name","_object","collider","parent","_children","_enabled","_visible","tags","persistent","_last_action","_local_position","_local_rotation","_local_scale","_color","texture","_opacity","_destroyed")
     def __init__(self,model="cube",position=(0,0,0),rotation=(0,0,0),scale=(1,1,1),name=None,engine=None,scene=None,parent=None,color=None,opacity=1.0,texture=None,enabled=True,visible=True):
         from .engine import get_default_engine
         from .scene import current_scene
@@ -21,7 +39,7 @@ class Object:
         self._model=model; self._local_position=Vec3(*position); self._local_rotation=Vec3(*rotation)
         s=(scale,scale,scale) if isinstance(scale,(int,float)) else scale; self._local_scale=Vec3(*s)
         self._position=self._local_position.copy(); self._rotation=self._local_rotation.copy(); self._scale=self._local_scale.copy()
-        self._components=[]; self.name=name or model; self.parent=None; self._children=[]
+        self._components=[]; self.name=name or model; self._object=_detect_variable_name() or self.name; self.parent=None; self._children=[]
         if color is None:
             self._color=(1.0,1.0,1.0)
         else:
@@ -39,6 +57,8 @@ class Object:
         if hasattr(self._engine,"_set_color"):self._engine._set_color(self._handle,*self._color,self._opacity)
     @property
     def id(self):return self._id
+    @property
+    def object(self):return self._object
     @property
     def enabled(self):return self._enabled
     @enabled.setter

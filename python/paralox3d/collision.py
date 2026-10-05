@@ -122,15 +122,20 @@ def _ray(origin,direction,mn,mx,distance):
 
 def raycast(origin,direction,distance=1000,ignore=()):
     from .engine import get_default_engine
+    engine=get_default_engine()
+    origin_owner=origin if hasattr(origin,"position") else None
+    origin=origin.position if origin_owner is not None else origin
     origin=origin if isinstance(origin,Vec3) else Vec3(*origin)
     direction=(direction if isinstance(direction,Vec3) else Vec3(*direction)).normalized()
     if direction.length_squared()==0: return None
     best=None
-    for o in get_default_engine()._objects:
+    for o in engine._objects:
         if o in ignore or not o.enabled or not o.collider.enabled: continue
         hit=_ray(origin,direction,o.collider.min,o.collider.max,distance)
         if hit and (best is None or hit[0]<best.distance):
             best=RaycastHit(o,origin+direction*hit[0],hit[1],hit[0])
+    end=best.point if best is not None else origin+direction*distance
+    engine._debug_raycast(origin,end,origin_owner)
     return best
 
 def boxcast(center,size,direction,distance=1,ignore=()):
