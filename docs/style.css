@@ -300,6 +300,13 @@ footer {
 }
 
 .api-page .layout { display:block; }
+.api-page .content {
+  width: min(900px, 100%);
+  margin: 0 auto;
+}
+.api-page .api-categories {
+  width: 100%;
+}
 .api-page .sidebar { display:none; }
 .api-categories {
   margin: 8px 0 55px;
