@@ -353,3 +353,67 @@ footer {
 @media (max-width:600px) {
   .api-category-grid { grid-template-columns:1fr; }
 }
+
+/* API reference layout — keep the public reference centered at every desktop width. */
+.api-page main {
+  width: 100%;
+  max-width: var(--max);
+  margin-left: auto;
+  margin-right: auto;
+}
+
+.api-page .layout {
+  display: block;
+  width: 100%;
+}
+
+.api-page .content {
+  display: block;
+  width: min(900px, 100%);
+  max-width: 900px;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+.api-page .api-categories {
+  display: block;
+  width: 100%;
+  margin: 8px 0 55px;
+  padding: 24px;
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  background: var(--panel);
+}
+
+.api-page .api-category-grid {
+  display: grid;
+  width: 100%;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 10px;
+  margin-top: 20px;
+}
+
+.api-page .api-category-grid a {
+  display: flex;
+  width: 100%;
+  min-width: 0;
+  flex-direction: column;
+  gap: 4px;
+  padding: 15px;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  background: var(--panel-2);
+  color: var(--text);
+}
+
+@media (max-width: 900px) {
+  .api-page .api-category-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 600px) {
+  .api-page .api-category-grid {
+    grid-template-columns: 1fr;
+  }
+}
