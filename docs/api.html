@@ -1,0 +1,363 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="description" content="Complete Paralox3D 0.1.1 API reference">
+<title>Paralox3D 0.1.1 API Reference</title>
+<link rel="icon" type="image/png" href="assets/logo_main.png">
+<link rel="stylesheet" href="style.css">
+</head>
+<body class="api-page">
+<header class="topbar">
+<a class="brand" href="index.html">Paralox3D</a>
+<button class="menu-button" aria-label="Toggle navigation" aria-expanded="false">Menu</button>
+<nav id="nav">
+<a href="index.html">Documentation</a><a href="#object">Object</a><a href="#collision">Collision</a><a href="#input">Input</a><a href="#camera">Camera</a><a href="#components">Components</a><a href="#scene">Scenes</a><a href="#timing">Timing</a><a href="#math">Math</a><a href="#errors">Errors</a>
+</nav>
+</header>
+<main id="top">
+<section class="hero">
+<p class="eyebrow">Paralox3D 0.1.1</p>
+<h1>API Reference</h1>
+<p class="lead">The complete public API reference for the 0.1.1 Python interface. This page is intentionally detailed: it documents the public classes, functions, properties, methods, arguments, and return values exposed by <code>paralox3d</code>.</p>
+<div class="hero-actions"><a class="button primary" href="index.html">← Documentation</a><a class="button" href="#object">Start with Object</a></div>
+</section>
+<div class="layout">
+<aside class="sidebar"><strong>API contents</strong>
+<a href="#object">Object / Entity</a><a href="#engine">Engine & startup</a><a href="#math">Vec3</a><a href="#collision">Collision & Collider</a><a href="#casts">Raycasts & casts</a><a href="#input">Keyboard input</a><a href="#mouse">Mouse</a><a href="#camera">Camera</a><a href="#components">Components</a><a href="#controllers">Controllers</a><a href="#scene">Scenes</a><a href="#timing">Timers</a><a href="#modes">Modes</a><a href="#lookup">Object lookup</a><a href="#colors">Colors</a><a href="#errors">Error handling</a><a href="#clock">dt</a></aside>
+<article class="content">
+
+<section id="contents">
+<h2>Public API map</h2>
+<p>Everything below is available through the normal public package import unless noted otherwise.</p>
+<div class="api-index">
+<a href="#object"><code>Object</code> / <code>Entity</code></a><a href="#engine"><code>Engine</code>, <code>start()</code></a><a href="#math"><code>Vec3</code></a>
+<a href="#collision"><code>Collider</code>, <code>Collision()</code></a><a href="#casts"><code>raycast()</code>, <code>boxcast()</code>, <code>spherecast()</code></a><a href="#casts"><code>overlap_box()</code>, <code>overlap_sphere()</code></a>
+<a href="#input"><code>key()</code>, <code>held()</code>, <code>pressed()</code></a><a href="#input"><code>bind()</code>, <code>action()</code>, <code>action_pressed()</code></a><a href="#mouse"><code>mouse</code></a>
+<a href="#camera"><code>camera</code>, <code>Camera</code></a><a href="#components"><code>Component</code>, <code>Script</code></a><a href="#controllers"><code>Controller</code>, <code>ControllerComponent</code>, <code>CharacterController</code></a>
+<a href="#scene"><code>Scene</code>, <code>current_scene()</code></a><a href="#timing"><code>Timer</code>, <code>after()</code>, <code>every()</code>, <code>cancel()</code></a><a href="#modes"><code>modes</code></a>
+<a href="#lookup"><code>find()</code>, <code>find_all()</code>, <code>find_with_tag()</code>, <code>find_by_id()</code></a><a href="#colors">Named colors</a><a href="#errors">Error helpers</a><a href="#clock"><code>dt</code></a>
+</div>
+</section>
+
+<section id="object">
+<h2>Object and Entity</h2>
+<p><code>Entity</code> is an alias for <code>Object</code>. Objects are the main 3D scene entities and provide transforms, appearance, hierarchy, collision, components, lookup identity, and lifecycle control.</p>
+<div class="api-signature"><code>Object(model="cube", position=(0,0,0), rotation=(0,0,0), scale=(1,1,1), name=None, engine=None, scene=None, parent=None, color=None, opacity=1.0, texture=None, enabled=True, visible=True)</code></div>
+<table class="api-table"><tr><th>Property</th><th>Description</th></tr>
+<tr><td><code>id</code></td><td>Unique numeric identifier assigned by the engine.</td></tr>
+<tr><td><code>object</code></td><td>Preferred object identifier. The variable name is used when it can be detected, otherwise the object's <code>name</code> is used.</td></tr>
+<tr><td><code>model</code></td><td>Model or primitive name. The current native renderer provides a cube primitive.</td></tr>
+<tr><td><code>name</code></td><td>Primary user-facing object name.</td></tr>
+<tr><td><code>position</code>, <code>x</code>, <code>y</code>, <code>z</code></td><td>World-space position and individual coordinates. Position values are <code>Vec3</code>-compatible.</td></tr>
+<tr><td><code>rotation</code></td><td>World rotation as a <code>Vec3</code>, using x/pitch, y/yaw, z/roll style angles.</td></tr>
+<tr><td><code>scale</code></td><td>World scale as a <code>Vec3</code>. A scalar scale value is expanded to all three axes.</td></tr>
+<tr><td><code>local_position</code>, <code>local_rotation</code>, <code>local_scale</code></td><td>Transform values relative to the object's parent.</td></tr>
+<tr><td><code>forward</code>, <code>right</code>, <code>up</code></td><td>Normalized direction vectors derived from the object's rotation.</td></tr>
+<tr><td><code>parent</code>, <code>children</code></td><td>Parent-child hierarchy. <code>children</code> is a tuple.</td></tr>
+<tr><td><code>components</code></td><td>Tuple containing attached components.</td></tr>
+<tr><td><code>collider</code></td><td>The object's <code>Collider</code>. It becomes unavailable after <code>destroy()</code>.</td></tr>
+<tr><td><code>color</code></td><td>RGB tuple in the 0..1 range.</td></tr>
+<tr><td><code>opacity</code></td><td>Object opacity value in the 0..1 range.</td></tr>
+<tr><td><code>texture</code></td><td>Stored texture value for the object's visual state.</td></tr>
+<tr><td><code>visible</code></td><td>Controls whether the object is visible to the renderer.</td></tr>
+<tr><td><code>enabled</code></td><td>Controls active object state. Disabled objects do not receive component updates and are excluded from collision queries.</td></tr>
+<tr><td><code>tags</code></td><td>Set of string tags.</td></tr>
+<tr><td><code>persistent</code></td><td>Marks an object to survive scene clearing and scene serialization rules.</td></tr>
+</table>
+<h3>Object methods</h3>
+<table class="api-table"><tr><th>Method</th><th>Description / return</th></tr>
+<tr><td><code>enable()</code></td><td>Enable the object and return the object.</td></tr>
+<tr><td><code>disable()</code></td><td>Disable the object and return the object.</td></tr>
+<tr><td><code>set_parent(parent)</code></td><td>Set or replace the parent and recompute world transforms. Returns the object.</td></tr>
+<tr><td><code>detach()</code></td><td>Remove the parent. Returns the object.</td></tr>
+<tr><td><code>add_tag(tag)</code></td><td>Add a string tag and return the object.</td></tr>
+<tr><td><code>remove_tag(tag)</code></td><td>Remove a tag and return the object.</td></tr>
+<tr><td><code>has_tag(tag)</code></td><td>Return <code>True</code> if the object has the tag.</td></tr>
+<tr><td><code>move(x=0,y=0,z=0)</code></td><td>Translate the object. Alias of <code>translate()</code>. Returns the object.</td></tr>
+<tr><td><code>translate(x=0,y=0,z=0)</code></td><td>Change local position and recompute hierarchy. Returns the object.</td></tr>
+<tr><td><code>rotate(x=0,y=0,z=0)</code></td><td>Change local rotation. Returns the object.</td></tr>
+<tr><td><code>scale_by(x=1,y=None,z=None)</code></td><td>Multiply local scale. Missing y/z values use x. Returns the object.</td></tr>
+<tr><td><code>look_at(target)</code></td><td>Rotate toward an Object or position-like target. Returns the object.</td></tr>
+<tr><td><code>distance_to(target)</code></td><td>Return distance to an Object or position-like target.</td></tr>
+<tr><td><code>move_forward(distance)</code></td><td>Move along <code>forward</code>. Returns the object.</td></tr>
+<tr><td><code>move_right(distance)</code></td><td>Move along <code>right</code>. Returns the object.</td></tr>
+<tr><td><code>move_up(distance)</code></td><td>Move along <code>up</code>. Returns the object.</td></tr>
+<tr><td><code>add(component)</code></td><td>Attach a component, set its owner, call <code>on_start()</code>, and return the component.</td></tr>
+<tr><td><code>get(component_type)</code></td><td>Return the first attached component matching the supplied type, or <code>None</code>.</td></tr>
+<tr><td><code>remove(component)</code></td><td>Remove a component, call <code>on_destroy()</code>, and clear its owner.</td></tr>
+<tr><td><code>destroy()</code></td><td>Permanently destroy the object, its children and component state, remove it from the engine, and remove its native entity.</td></tr>
+</table>
+<div class="api-note"><strong>Position ownership:</strong> an object's <code>position</code> retains its owning object. Therefore both <code>raycast(origin=player, ...)</code> and <code>raycast(origin=player.position, ...)</code> can identify the same origin object. The origin object is automatically ignored by the raycast.</div>
+</section>
+
+<section id="engine">
+<h2>Engine and startup</h2>
+<div class="api-signature"><code>Engine(title="Paralox3D", width=1280, height=720, max_fps=0)</code></div>
+<table class="api-table"><tr><th>Member</th><th>Description</th></tr>
+<tr><td><code>title</code>, <code>width</code>, <code>height</code>, <code>max_fps</code></td><td>Engine configuration values.</td></tr>
+<tr><td><code>start(update=None)</code></td><td>Run the engine loop. An optional callable is used as the per-frame update callback.</td></tr>
+<tr><td><code>run()</code></td><td>Compatibility alias that starts the engine.</td></tr>
+<tr><td><code>close()</code></td><td>Destroy the native engine and stop the loop.</td></tr>
+</table>
+<div class="api-signature"><code>start()</code></div>
+<p>The zero-boilerplate public startup function. It finds an <code>update()</code> function in the caller's module and runs the default engine.</p>
+<div class="api-signature"><code>get_default_engine()</code></div>
+<p>Return the current default <code>Engine</code>, creating one when necessary.</p>
+</section>
+
+<section id="math">
+<h2>Vec3</h2>
+<div class="api-signature"><code>Vec3(x=0.0, y=0.0, z=0.0)</code></div>
+<p>The public 3D vector type. It supports iteration and arithmetic and is accepted anywhere a vector-like 3-tuple is documented.</p>
+<table class="api-table"><tr><th>Member</th><th>Description</th></tr>
+<tr><td><code>x</code>, <code>y</code>, <code>z</code></td><td>Vector components.</td></tr>
+<tr><td><code>as_tuple()</code></td><td>Return <code>(x, y, z)</code>.</td></tr>
+<tr><td><code>copy()</code></td><td>Return a copy, retaining position ownership when present.</td></tr>
+<tr><td><code>length()</code></td><td>Euclidean vector length.</td></tr>
+<tr><td><code>length_squared()</code></td><td>Squared length without a square root.</td></tr>
+<tr><td><code>normalized()</code></td><td>Return a unit vector, or zero vector for zero input.</td></tr>
+<tr><td><code>dot(other)</code></td><td>Dot product.</td></tr>
+<tr><td><code>cross(other)</code></td><td>Cross product.</td></tr>
+<tr><td><code>distance_to(other)</code></td><td>Distance between vectors.</td></tr>
+<tr><td><code>lerp(other,t)</code></td><td>Linear interpolation from this vector to <code>other</code>.</td></tr>
+</table>
+<p>Supported operators include <code>+</code>, <code>-</code>, unary <code>-</code>, scalar <code>*</code>, scalar <code>/</code>, and equality.</p>
+</section>
+
+<section id="collision">
+<h2>Collider and Collision</h2>
+<div class="api-signature"><code>Collider(owner, size=None, offset=(0,0,0), enabled=True, is_trigger=False, layer="default", collides_with=None)</code></div>
+<table class="api-table"><tr><th>Member</th><th>Description</th></tr>
+<tr><td><code>owner</code></td><td>Object owning the collider.</td></tr>
+<tr><td><code>size</code></td><td>AABB dimensions. If not explicitly supplied, the initial object scale is used.</td></tr>
+<tr><td><code>offset</code></td><td>Position offset from the owner.</td></tr>
+<tr><td><code>position</code></td><td>Owner position plus collider offset.</td></tr>
+<tr><td><code>min</code>, <code>max</code></td><td>World-space AABB bounds.</td></tr>
+<tr><td><code>enabled</code></td><td>Whether the collider participates in queries and collision processing.</td></tr>
+<tr><td><code>is_trigger</code></td><td>Marks the collider as a trigger. Collision compatibility checks still use the collider's enabled state.</td></tr>
+<tr><td><code>layer</code></td><td>String collision layer.</td></tr>
+<tr><td><code>collides_with</code></td><td>Set of layers this collider accepts. <code>"*"</code> matches all layers.</td></tr>
+<tr><td><code>sync_to_scale()</code></td><td>Refresh an automatically sized collider from the owner's scale.</td></tr>
+</table>
+<div class="api-signature"><code>Collision(a, b=None)</code></div>
+<p>With two objects, returns a boolean overlap result. With one object, returns a list of other overlapping objects. Invalid or destroyed objects raise a clear error.</p>
+</section>
+
+<section id="casts">
+<h2>Raycasts and spatial queries</h2>
+<div class="api-signature"><code>raycast(origin, direction, distance=1000, ignore=())</code></div>
+<p>Cast a ray through the engine's enabled AABB colliders. <code>origin</code> may be an Object, an owned <code>Object.position</code>, a <code>Vec3</code>, or a 3-tuple. If the origin belongs to an Object, that object is automatically ignored. The nearest hit is returned as a <code>RaycastHit</code>; otherwise <code>None</code>.</p>
+<table class="api-table"><tr><th>RaycastHit member</th><th>Description</th></tr>
+<tr><td><code>object</code></td><td>The hit object's preferred <code>.object</code> identifier.</td></tr>
+<tr><td><code>entity</code></td><td>The actual hit <code>Object</code> instance.</td></tr>
+<tr><td><code>point</code></td><td>World-space hit point.</td></tr>
+<tr><td><code>normal</code></td><td>Approximate surface normal of the hit AABB face.</td></tr>
+<tr><td><code>distance</code></td><td>Distance from the ray origin to the hit.</td></tr>
+</table>
+<div class="api-signature"><code>boxcast(center, size, direction, distance=1, ignore=())</code></div>
+<p>Cast an axis-aligned box-shaped query along a direction. Returns the nearest <code>RaycastHit</code> or <code>None</code>.</p>
+<div class="api-signature"><code>spherecast(center, radius, direction, distance=1, ignore=())</code></div>
+<p>Convenience cast using a box with dimensions <code>radius * 2</code> on each axis. Returns the nearest <code>RaycastHit</code> or <code>None</code>.</p>
+<div class="api-signature"><code>overlap_box(center, size, ignore=())</code></div>
+<p>Return a list of enabled collidable objects whose AABBs overlap the requested box.</p>
+<div class="api-signature"><code>overlap_sphere(center, radius, ignore=())</code></div>
+<p>Return a list of enabled collidable objects overlapping the sphere query.</p>
+<div class="api-note"><strong>Developer visualization:</strong> with <code>modes.developer = True</code>, a raycast is drawn as a temporary developer line for about 0.3 seconds. A newer raycast from the same origin Object replaces the previous line.</div>
+</section>
+
+<section id="input">
+<h2>Keyboard input</h2>
+<table class="api-table"><tr><th>Function</th><th>Description</th></tr>
+<tr><td><code>key(key_name)</code></td><td>Compatibility shorthand for <code>held()</code>.</td></tr>
+<tr><td><code>held(*keys)</code></td><td>True when all supplied keys are held.</td></tr>
+<tr><td><code>any_held(*keys)</code></td><td>True when at least one supplied key is held.</td></tr>
+<tr><td><code>pressed(key)</code></td><td>True for the frame in which a key was pressed.</td></tr>
+<tr><td><code>bind(action, *keys)</code></td><td>Bind a named action to one or more keys. Returns the action name.</td></tr>
+<tr><td><code>action(name)</code></td><td>True while all keys bound to the named action are held.</td></tr>
+<tr><td><code>action_pressed(name)</code></td><td>True when any key bound to the named action is newly pressed.</td></tr>
+</table>
+<p>Built-in key names include letters, digits, <code>space</code>, <code>enter</code>, <code>escape</code>, <code>tab</code>, <code>backspace</code>, <code>shift</code>, <code>ctrl</code>, <code>alt</code>, <code>left</code>, <code>up</code>, <code>right</code>, and <code>down</code>.</p>
+<pre><code>bind("jump", "space")
+if action_pressed("jump"):
+    player.y += 1
+
+if held("w", "shift"):
+    player.move_forward(8 * dt)</code></pre>
+</section>
+
+<section id="mouse">
+<h2>Mouse</h2>
+<p><code>mouse</code> is the global <code>Mouse</code> instance.</p>
+<table class="api-table"><tr><th>Member</th><th>Description</th></tr>
+<tr><td><code>position</code></td><td>Current 2D mouse position as <code>(x, y)</code>.</td></tr>
+<tr><td><code>x</code>, <code>y</code></td><td>Current mouse coordinates.</td></tr>
+<tr><td><code>dx</code>, <code>dy</code></td><td>Per-frame movement delta.</td></tr>
+<tr><td><code>wheel</code></td><td>Per-frame wheel movement.</td></tr>
+<tr><td><code>left</code>, <code>right</code>, <code>middle</code></td><td>Current held state of each mouse button.</td></tr>
+<tr><td><code>pressed(button)</code></td><td>True during the frame the specified button was pressed.</td></tr>
+<tr><td><code>visible</code></td><td>Controls the public cursor visibility state.</td></tr>
+<tr><td><code>locked</code></td><td>Controls relative mouse mode.</td></tr>
+<tr><td><code>lock()</code></td><td>Enable relative mouse mode.</td></tr>
+<tr><td><code>unlock()</code></td><td>Disable relative mouse mode.</td></tr>
+</table>
+</section>
+
+<section id="camera">
+<h2>Camera</h2>
+<p><code>camera</code> is the global <code>Camera</code> instance.</p>
+<table class="api-table"><tr><th>Member</th><th>Description</th></tr>
+<tr><td><code>x</code>, <code>y</code>, <code>z</code></td><td>Camera position coordinates.</td></tr>
+<tr><td><code>position</code></td><td>Camera position as a <code>Vec3</code>.</td></tr>
+<tr><td><code>pitch</code>, <code>yaw</code>, <code>roll</code></td><td>Camera orientation angles.</td></tr>
+<tr><td><code>look_at(target)</code></td><td>Orient the camera toward a position-like target.</td></tr>
+</table>
+<p>Set <code>modes.camera = True</code> to enable the built-in native camera controls. The camera can be used without creating a Controller.</p>
+</section>
+
+<section id="components">
+<h2>Components</h2>
+<h3>Component</h3>
+<div class="api-signature"><code>Component(owner=None)</code></div>
+<table class="api-table"><tr><th>Member</th><th>Description</th></tr>
+<tr><td><code>owner</code></td><td>Object the component is attached to.</td></tr>
+<tr><td><code>enabled</code></td><td>Enable/disable component updates. Changing it calls the corresponding lifecycle hook.</td></tr>
+<tr><td><code>on_start()</code></td><td>Called when attached through <code>Object.add()</code>.</td></tr>
+<tr><td><code>on_enable()</code></td><td>Called when transitioning to enabled.</td></tr>
+<tr><td><code>on_disable()</code></td><td>Called when transitioning to disabled.</td></tr>
+<tr><td><code>update()</code></td><td>Per-frame component callback.</td></tr>
+<tr><td><code>on_destroy()</code></td><td>Called when the component is removed or its owner is destroyed.</td></tr>
+</table>
+<h3>Script</h3>
+<p><code>Script(owner=None, update=None)</code> is a <code>Component</code> that calls its supplied update callable every frame.</p>
+</section>
+
+<section id="controllers">
+<h2>Controllers</h2>
+<h3>ControllerComponent</h3>
+<div class="api-signature"><code>ControllerComponent(owner=None, height=2.0, speed=5.0, gravity=1.0, jump_height=2.0, jump_duration=0.5, fall_after=0.35, step_height=0.5, sprint=False, sprint_speed=None, sprint_key="shift", jump_speed=None)</code></div>
+<p>Built-in character movement controller with WASD movement, gravity, jumping, stepping, sprinting, and ground checks.</p>
+<table class="api-table"><tr><th>Member</th><th>Description</th></tr>
+<tr><td><code>height</code></td><td>Controller body height.</td></tr>
+<tr><td><code>speed</code></td><td>Normal movement speed.</td></tr>
+<tr><td><code>gravity</code></td><td>Gravity strength multiplier.</td></tr>
+<tr><td><code>jump_height</code></td><td>Default jump height used to calculate jump speed.</td></tr>
+<tr><td><code>jump_duration</code></td><td>Stored jump duration setting.</td></tr>
+<tr><td><code>fall_after</code></td><td>Stored falling delay setting.</td></tr>
+<tr><td><code>step_height</code></td><td>Maximum step height attempted by the controller.</td></tr>
+<tr><td><code>sprint</code></td><td>Whether sprinting is enabled.</td></tr>
+<tr><td><code>sprint_speed</code></td><td>Speed used while sprinting.</td></tr>
+<tr><td><code>sprint_key</code></td><td>Key used for sprinting.</td></tr>
+<tr><td><code>jump_speed</code></td><td>Optional direct jump velocity override.</td></tr>
+<tr><td><code>grounded</code>, <code>jumping</code>, <code>air_time</code>, <code>velocity_y</code></td><td>Runtime movement state.</td></tr>
+</table>
+<h3>CharacterController</h3>
+<p>Compatibility name for <code>ControllerComponent</code>.</p>
+<h3>Controller</h3>
+<div class="api-signature"><code>Controller(model="cube", position=(0,1,0), rotation=(0,0,0), scale=(1,2,1), name="Player", engine=None, scene=None, parent=None, color=None, opacity=None, size=None, **kwargs)</code></div>
+<p>Convenience constructor that creates an <code>Object</code>, attaches a <code>ControllerComponent</code>, optionally changes collider size, and returns the ready-to-use Object.</p>
+</section>
+
+<section id="scene">
+<h2>Scenes</h2>
+<div class="api-signature"><code>Scene(name="Scene")</code></div>
+<table class="api-table"><tr><th>Member</th><th>Description</th></tr>
+<tr><td><code>name</code></td><td>Scene name.</td></tr>
+<tr><td><code>objects</code></td><td>Objects belonging to the scene.</td></tr>
+<tr><td><code>on_enter</code>, <code>on_exit</code></td><td>Optional lifecycle callbacks.</td></tr>
+<tr><td><code>add(obj)</code></td><td>Add an object and return it.</td></tr>
+<tr><td><code>create(model="cube", **kwargs)</code></td><td>Create an Object belonging to the scene and return it.</td></tr>
+<tr><td><code>enter()</code></td><td>Make the scene current and call <code>on_enter</code>. Returns the scene.</td></tr>
+<tr><td><code>exit()</code></td><td>Call <code>on_exit</code> if supplied.</td></tr>
+<tr><td><code>clear(keep_persistent=True)</code></td><td>Destroy scene objects except persistent objects when requested. Returns the scene.</td></tr>
+<tr><td><code>save(path)</code></td><td>Write scene data as readable JSON and return the resulting <code>Path</code>.</td></tr>
+<tr><td><code>Scene.load(path, on_loaded=None)</code></td><td>Load a JSON scene and return a new Scene.</td></tr>
+<tr><td><code>Scene.switch(scene, on_loaded=None)</code></td><td>Exit the current scene, load if necessary, enter the new scene, and return it.</td></tr>
+</table>
+<div class="api-signature"><code>current_scene()</code></div>
+<p>Return the current Scene, or <code>None</code> when no scene is active.</p>
+</section>
+
+<section id="timing">
+<h2>Timing</h2>
+<h3>Timer</h3>
+<div class="api-signature"><code>Timer(duration, callback=None, repeat=False)</code></div>
+<table class="api-table"><tr><th>Member</th><th>Description</th></tr>
+<tr><td><code>duration</code></td><td>Timer interval in seconds.</td></tr>
+<tr><td><code>remaining</code></td><td>Remaining time until the next callback.</td></tr>
+<tr><td><code>callback</code></td><td>Callable invoked when the timer expires.</td></tr>
+<tr><td><code>repeat</code></td><td>Whether the timer repeats.</td></tr>
+<tr><td><code>cancelled</code></td><td>Whether the timer has been cancelled.</td></tr>
+<tr><td><code>done</code></td><td>True when a one-shot timer has finished or any timer has been cancelled.</td></tr>
+<tr><td><code>cancel()</code></td><td>Cancel and return the timer.</td></tr>
+<tr><td><code>reset()</code></td><td>Reset remaining time and return the timer.</td></tr>
+</table>
+<h3>Functions</h3>
+<div class="api-signature"><code>after(seconds, callback)</code> → <code>Timer</code></div>
+<p>Schedule a one-shot timer.</p>
+<div class="api-signature"><code>every(seconds, callback)</code> → <code>Timer</code></div>
+<p>Schedule a repeating timer.</p>
+<div class="api-signature"><code>cancel(timer)</code></div>
+<p>Cancel a timer and remove it from the global timer list.</p>
+</section>
+
+<section id="modes">
+<h2>Modes</h2>
+<p><code>modes</code> is the global runtime mode object.</p>
+<table class="api-table"><tr><th>Property</th><th>Description</th></tr>
+<tr><td><code>modes.developer</code></td><td>Boolean. Enables developer diagnostics, visual collider bounds, and raycast debug lines.</td></tr>
+<tr><td><code>modes.camera</code></td><td>Boolean. Enables the built-in native camera controls.</td></tr>
+</table>
+<p>Both properties require actual booleans. Other values raise <code>TypeError</code>.</p>
+</section>
+
+<section id="lookup">
+<h2>Object lookup</h2>
+<table class="api-table"><tr><th>Function</th><th>Description / return</th></tr>
+<tr><td><code>find(name)</code></td><td>Return the first Object whose <code>name</code> matches, or <code>None</code>.</td></tr>
+<tr><td><code>find_all(name)</code></td><td>Return every Object whose <code>name</code> matches.</td></tr>
+<tr><td><code>find_with_tag(tag)</code></td><td>Return every Object containing the supplied tag.</td></tr>
+<tr><td><code>find_by_id(object_id)</code></td><td>Return the Object with the numeric ID, or <code>None</code>.</td></tr>
+</table>
+</section>
+
+<section id="colors">
+<h2>Named colors</h2>
+<p>All named colors are RGB tuples in the 0..1 range and can be assigned directly to <code>Object.color</code>.</p>
+<p><code>red</code>, <code>dark_red</code>, <code>light_red</code>, <code>crimson</code>, <code>scarlet</code>, <code>ruby</code>, <code>coral</code>, <code>salmon</code>, <code>orange</code>, <code>dark_orange</code>, <code>light_orange</code>, <code>amber</code>, <code>gold</code>, <code>yellow</code>, <code>lemon</code>, <code>khaki</code>, <code>lime</code>, <code>chartreuse</code>, <code>green</code>, <code>dark_green</code>, <code>light_green</code>, <code>forest</code>, <code>emerald</code>, <code>mint</code>, <code>spring_green</code>, <code>sea_green</code>, <code>olive</code>, <code>teal</code>, <code>turquoise</code>, <code>cyan</code>, <code>aqua</code>, <code>sky_blue</code>, <code>light_blue</code>, <code>blue</code>, <code>dark_blue</code>, <code>navy</code>, <code>royal_blue</code>, <code>azure</code>, <code>cornflower_blue</code>, <code>steel_blue</code>, <code>dodger_blue</code>, <code>midnight_blue</code>, <code>purple</code>, <code>dark_purple</code>, <code>light_purple</code>, <code>violet</code>, <code>indigo</code>, <code>plum</code>, <code>lavender</code>, <code>magenta</code>, <code>fuchsia</code>, <code>pink</code>, <code>light_pink</code>, <code>hot_pink</code>, <code>deep_pink</code>, <code>rose</code>, <code>maroon</code>, <code>brown</code>, <code>dark_brown</code>, <code>light_brown</code>, <code>tan</code>, <code>beige</code>, <code>wheat</code>, <code>chocolate</code>, <code>sienna</code>, <code>white</code>, <code>off_white</code>, <code>ivory</code>, <code>snow</code>, <code>gray</code>, <code>grey</code>, <code>light_gray</code>, <code>light_grey</code>, <code>dark_gray</code>, <code>dark_grey</code>, <code>silver</code>, <code>charcoal</code>, <code>black</code>, <code>electric_blue</code>, <code>neon_blue</code>, <code>neon_green</code>, <code>neon_pink</code>, <code>neon_purple</code>, <code>neon_yellow</code>, <code>neon_orange</code>, <code>ice_blue</code>, <code>ocean_blue</code>, <code>deep_ocean</code>, <code>sunset</code>, <code>sunrise</code>, <code>fire</code>, <code>flame</code>, <code>poison</code>, <code>toxic_green</code>, <code>energy</code>, <code>arcane</code>, <code>royal_purple</code>.</p>
+</section>
+
+<section id="errors">
+<h2>Error handling</h2>
+<table class="api-table"><tr><th>Function / class</th><th>Description</th></tr>
+<tr><td><code>explain_error(error)</code></td><td>Produce the engine's explanation for an exception.</td></tr>
+<tr><td><code>report_error(error)</code></td><td>Report one exception through the Paralox3D error system.</td></tr>
+<tr><td><code>report_errors(errors)</code></td><td>Report a collection of errors.</td></tr>
+<tr><td><code>ErrorGroup</code></td><td>Public error grouping type used by the error engine.</td></tr>
+</table>
+<p>Developer mode is intended to expose more diagnostic information while the normal mode keeps common engine errors easier to understand.</p>
+</section>
+
+<section id="clock">
+<h2>Frame delta time</h2>
+<div class="api-signature"><code>dt</code></div>
+<p>Global frame delta time. It represents the elapsed seconds since the previous frame. Because <code>dt</code> is a mutable numeric proxy, importing it directly remains safe:</p>
+<pre><code>from paralox3d import dt
+
+def update():
+    player.x += speed * dt</code></pre>
+</section>
+
+<section>
+<h2>Import style</h2>
+<pre><code>from paralox3d import *</code></pre>
+<p>The public package exports the documented engine, scene, entity, math, collision, input, camera, component, timing, mode, error, lookup, and named-color APIs. The reference above describes the public surface intended for game code; private implementation modules and internal engine helpers are not part of this reference.</p>
+</section>
+
+</article></div></main>
+<a class="corner-logo" href="#top" aria-label="Back to top"><img src="assets/logo_main.png" alt=""></a>
+<footer><p>Paralox3D 0.1.1 · MIT License · <a href="https://github.com/N0one123/Paralox3D">GitHub</a></p></footer>
+<script src="script.js"></script>
+</body>
+</html>

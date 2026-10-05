@@ -235,3 +235,66 @@ footer {
   .sidebar { display: none; }
   .api-grid { grid-template-columns: 1fr; }
 }
+
+
+.api-button { font-weight: 750; }
+.api-large-button { margin-top: 4px; }
+
+.api-page .hero { padding-bottom: 45px; }
+.api-page .layout { grid-template-columns: 220px minmax(0, 1fr); }
+.api-page .content section { padding-top: 30px; }
+.api-index {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 8px;
+  margin: 18px 0 8px;
+}
+.api-index a {
+  display: block;
+  padding: 10px 12px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--panel);
+  color: var(--muted);
+}
+.api-index a:hover { color: var(--text); text-decoration: none; border-color: #46515e; }
+.api-entry {
+  margin: 24px 0 32px;
+  padding-top: 8px;
+}
+.api-entry > h3 { margin-top: 18px; }
+.api-signature {
+  margin: 12px 0;
+  padding: 12px 15px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--code);
+  overflow-x: auto;
+}
+.api-table {
+  width: 100%;
+  border-collapse: collapse;
+  margin: 14px 0 22px;
+  font-size: .92rem;
+}
+.api-table th, .api-table td {
+  padding: 9px 10px;
+  text-align: left;
+  vertical-align: top;
+  border-bottom: 1px solid var(--line);
+}
+.api-table th { color: var(--text); }
+.api-table td { color: var(--muted); }
+.api-table code { white-space: nowrap; }
+.api-note {
+  padding: 12px 15px;
+  margin: 14px 0;
+  background: var(--panel);
+  border-left: 3px solid var(--accent);
+}
+@media (max-width: 900px) {
+  .api-index { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+@media (max-width: 600px) {
+  .api-index { grid-template-columns: 1fr; }
+}
