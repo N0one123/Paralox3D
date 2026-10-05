@@ -38,7 +38,7 @@ class Object:
         self._engine=engine or get_default_engine(); self._id=self._engine._next_object_id(); self._handle=self._engine._create_entity()
         self._model=model; self._local_position=Vec3(*position); self._local_rotation=Vec3(*rotation)
         s=(scale,scale,scale) if isinstance(scale,(int,float)) else scale; self._local_scale=Vec3(*s)
-        self._position=self._local_position.copy(); self._rotation=self._local_rotation.copy(); self._scale=self._local_scale.copy()
+        self._position=self._local_position.copy(); self._position.owner=self; self._rotation=self._local_rotation.copy(); self._scale=self._local_scale.copy()
         self._components=[]; self.name=name or model; self._object=_detect_variable_name() or self.name; self.parent=None; self._children=[]
         if color is None:
             self._color=(1.0,1.0,1.0)
@@ -138,6 +138,7 @@ class Object:
             self._rotation=self.parent._rotation+self._local_rotation
             self._scale=Vec3(self.parent._scale.x*self._local_scale.x,self.parent._scale.y*self._local_scale.y,self.parent._scale.z*self._local_scale.z)
         else:self._position=self._local_position.copy();self._rotation=self._local_rotation.copy();self._scale=self._local_scale.copy()
+        self._position.owner=self
         self._push()
         for c in tuple(self._children):c._recompute_world()
     def set_parent(self,parent):

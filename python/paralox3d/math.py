@@ -1,13 +1,14 @@
 """Small, allocation-friendly math types for the public API."""
 from __future__ import annotations
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 import math
 @dataclass(slots=True)
 class Vec3:
     x:float=0.0;y:float=0.0;z:float=0.0
+    owner:object=field(default=None,repr=False,compare=False)
     def __iter__(self):yield self.x;yield self.y;yield self.z
     def as_tuple(self):return (self.x,self.y,self.z)
-    def copy(self):return Vec3(self.x,self.y,self.z)
+    def copy(self):return Vec3(self.x,self.y,self.z,self.owner)
     def __add__(self,o):return Vec3(self.x+o.x,self.y+o.y,self.z+o.z)
     def __sub__(self,o):return Vec3(self.x-o.x,self.y-o.y,self.z-o.z)
     def __neg__(self):return Vec3(-self.x,-self.y,-self.z)

@@ -1,5 +1,6 @@
 """AABB collision and lightweight spatial query helpers."""
 from .math import Vec3
+from .modes import modes
 
 class Collider:
     __slots__=("owner","enabled","_size","_offset","is_trigger","layer","collides_with","_auto_size")
@@ -97,21 +98,22 @@ def _dispatch_collision_events(engine):
     engine._collision_pairs=current
 
 class RaycastHit:
-    __slots__=("object","point","normal","distance")
+    __slots__=("object","entity","point","normal","distance")
     def __init__(self,obj,point,normal,distance):
-        self.object=obj
+        self.object=obj.object
+        self.entity=obj
         self.point=point
         self.normal=normal
         self.distance=distance
 
-def _ray(origin,direction,mn,mx,distance):
+def _ray_bounds(origin,direction,min_x,min_y,min_z,max_x,max_y,max_z,distance):
     t0,t1=0.0,float(distance)
     normal=Vec3()
-    for axis,(o,d,a,b) in enumerate(((origin.x,direction.x,mn.x,mx.x),(origin.y,direction.y,mn.y,mx.y),(origin.z,direction.z,mn.z,mx.z))):
+    for axis,(o,d,lo,hi) in enumerate(((origin.x,direction.x,min_x,max_x),(origin.y,direction.y,min_y,max_y),(origin.z,direction.z,min_z,max_z))):
         if abs(d)<1e-8:
-            if o<a or o>b: return None
+            if o<lo or o>hi: return None
         else:
-            u,v=(a-o)/d,(b-o)/d
+            u,v=(lo-o)/d,(hi-o)/d
             if u>v: u,v=v,u
             if u>t0:
                 t0=u
@@ -123,19 +125,34 @@ def _ray(origin,direction,mn,mx,distance):
 def raycast(origin,direction,distance=1000,ignore=()):
     from .engine import get_default_engine
     engine=get_default_engine()
-    origin_owner=origin if hasattr(origin,"position") else None
+    origin_owner=origin if hasattr(origin,"position") else getattr(origin,"owner",None)
     origin=origin.position if origin_owner is not None else origin
     origin=origin if isinstance(origin,Vec3) else Vec3(*origin)
-    direction=(direction if isinstance(direction,Vec3) else Vec3(*direction)).normalized()
-    if direction.length_squared()==0: return None
+    direction=direction if isinstance(direction,Vec3) else Vec3(*direction)
+    length_sq=direction.length_squared()
+    if length_sq==0: return None
+    direction=direction*(1.0/(length_sq**0.5))
+    ignored=set(ignore)
+    if origin_owner is not None:
+        ignored.add(origin_owner)
     best=None
     for o in engine._objects:
-        if o in ignore or not o.enabled or not o.collider.enabled: continue
-        hit=_ray(origin,direction,o.collider.min,o.collider.max,distance)
+        if o in ignored or not o.enabled:
+            continue
+        collider=o.collider
+        if not collider.enabled:
+            continue
+        p=collider.owner._position
+        off=collider._offset
+        size=collider._size
+        cx,cy,cz=p.x+off.x,p.y+off.y,p.z+off.z
+        hx,hy,hz=abs(size.x)*0.5,abs(size.y)*0.5,abs(size.z)*0.5
+        hit=_ray_bounds(origin,direction,cx-hx,cy-hy,cz-hz,cx+hx,cy+hy,cz+hz,distance)
         if hit and (best is None or hit[0]<best.distance):
             best=RaycastHit(o,origin+direction*hit[0],hit[1],hit[0])
-    end=best.point if best is not None else origin+direction*distance
-    engine._debug_raycast(origin,end,origin_owner)
+    if modes.developer:
+        end=best.point if best is not None else origin+direction*distance
+        engine._debug_raycast(origin,end,origin_owner)
     return best
 
 def boxcast(center,size,direction,distance=1,ignore=()):
