@@ -21,7 +21,7 @@ P3DEngine* p3d_engine_create(int width, int height, const char* title) {
     auto* engine = new P3DEngine{};
     engine->width = width;
     engine->height = height;
-    engine->transforms.reserve(1024);
+    engine->transforms.reserve(16384);
     engine->renderer.reset(create_platform_renderer());
     if (!engine->renderer || !engine->renderer->create(width, height, title)) {
         delete engine;
