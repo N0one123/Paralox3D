@@ -92,7 +92,7 @@ Use `Collision(a, b)` for a pair or `Collision(a)` to find all compatible overla
 
 Spatial queries include:
 
-- `raycast(origin, direction, distance=...)`
+- `raycast(origin, direction, distance=...)` (Object, Collider, and Object.position origins are supported)
 - `boxcast(center, size, direction, distance=...)`
 - `spherecast(center, radius, direction, distance=...)`
 - `overlap_box(center, size)`
