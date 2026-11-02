@@ -253,15 +253,26 @@ def raycast(origin,direction,distance=1000,ignore=()):
     return best
 
 def boxcast(center,size,direction,distance=1,ignore=()):
-    c=center if isinstance(center,Vec3) else Vec3(*center)
-    s=size if isinstance(size,Vec3) else Vec3(*size)
-    d=(direction if isinstance(direction,Vec3) else Vec3(*direction)).normalized()
-    best=None
-    for o in __import__("paralox3d").get_default_engine()._objects:
-        if o in ignore or not o.enabled or not o.collider.enabled: continue
-        hit=_ray(c,d,o.collider.min-s*.5,o.collider.max+s*.5,distance)
-        if hit and (best is None or hit[0]<best.distance):
-            best=RaycastHit(o,c+d*hit[0],hit[1],hit[0])
+    c = center if isinstance(center, Vec3) else Vec3(*center)
+    s = size if isinstance(size, Vec3) else Vec3(*size)
+    d = direction if isinstance(direction, Vec3) else Vec3(*direction)
+    length_sq = d.length_squared()
+    if length_sq == 0:
+        return None
+    d = d * (1.0 / (length_sq ** 0.5))
+    ignored = set(ignore or ())
+    best = None
+    engine = __import__("paralox3d").get_default_engine()
+    for obj in engine._objects:
+        collider = obj.collider
+        if obj in ignored or not obj.enabled or collider is None or not collider.enabled:
+            continue
+        p, off, size3 = collider.owner._position, collider._offset, collider._size
+        cx, cy, cz = p.x + off.x, p.y + off.y, p.z + off.z
+        hx, hy, hz = abs(size3.x)*0.5+s.x*0.5, abs(size3.y)*0.5+s.y*0.5, abs(size3.z)*0.5+s.z*0.5
+        hit = _ray_bounds(c, d, cx-hx, cy-hy, cz-hz, cx+hx, cy+hy, cz+hz, distance)
+        if hit is not None and (best is None or hit[0] < best.distance):
+            best = RaycastHit(obj, c + d*hit[0], hit[1], hit[0])
     return best
 
 def spherecast(center,radius,direction,distance=1,ignore=()):
