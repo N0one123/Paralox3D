@@ -75,13 +75,7 @@ def Collision(a,b=None):
     return [o for o in a._engine._objects if o is not a and o.collider is not None and _overlaps(a_collider,o.collider)]
 
 def _dispatch_collision_events(engine):
-    """Grid broadphase: only test objects sharing one or more spatial cells."""
-    from collections import defaultdict
-
-    cell_size = 4.0
-    max_cells_per_object = 64
-    grid = defaultdict(list)
-    oversized = []
+    """Use a cheap scalar sweep for small scenes and a grid for large scenes."""
     active = []
     bounds = {}
 
@@ -91,51 +85,24 @@ def _dispatch_collision_events(engine):
             continue
         p, off, size = collider.owner._position, collider._offset, collider._size
         hx, hy, hz = abs(size.x)*0.5, abs(size.y)*0.5, abs(size.z)*0.5
-        mnx, mny, mnz = p.x+off.x-hx, p.y+off.y-hy, p.z+off.z-hz
-        mxx, mxy, mxz = p.x+off.x+hx, p.y+off.y+hy, p.z+off.z+hz
+        bounds[obj] = (
+            p.x+off.x-hx, p.y+off.y-hy, p.z+off.z-hz,
+            p.x+off.x+hx, p.y+off.y+hy, p.z+off.z+hz
+        )
         active.append(obj)
-        bounds[obj] = (mnx, mny, mnz, mxx, mxy, mxz)
-        x0, y0, z0 = (int(v // cell_size) for v in (mnx, mny, mnz))
-        x1, y1, z1 = (int(v // cell_size) for v in (mxx, mxy, mxz))
-        cells = (x1-x0+1) * (y1-y0+1) * (z1-z0+1)
-        if cells > max_cells_per_object:
-            oversized.append(obj)
-            continue
-        for x in range(x0, x1+1):
-            for y in range(y0, y1+1):
-                for z in range(z0, z1+1):
-                    grid[(x, y, z)].append(obj)
-
-    candidates = set()
-    for bucket in grid.values():
-        if len(bucket) < 2:
-            continue
-        for i, a in enumerate(bucket):
-            for b in bucket[i+1:]:
-                if a.id < b.id:
-                    candidates.add((a, b))
-                else:
-                    candidates.add((b, a))
-
-    # Very large colliders are deliberately kept out of the grid to avoid
-    # inserting thousands of cells; compare them against active objects.
-    if oversized:
-        for a in oversized:
-            for b in active:
-                if a is not b:
-                    candidates.add((a, b) if a.id < b.id else (b, a))
 
     current = set()
-    for a, b in candidates:
+
+    def dispatch_pair(a, b):
         if not _compatible(a.collider, b.collider):
-            continue
+            return
         ax0, ay0, az0, ax1, ay1, az1 = bounds[a]
         bx0, by0, bz0, bx1, by1, bz1 = bounds[b]
         if not (ax0 <= bx1 and ax1 >= bx0
                 and ay0 <= by1 and ay1 >= by0
                 and az0 <= bz1 and az1 >= bz0):
-            continue
-        pair = (a.id, b.id)
+            return
+        pair = (min(a.id, b.id), max(a.id, b.id))
         current.add(pair)
         if pair not in engine._collision_pairs:
             callback = getattr(a, "on_enter", None)
@@ -151,9 +118,56 @@ def _dispatch_collision_events(engine):
         if callback:
             callback(a)
 
-    if engine._collision_pairs - current:
+    # The grid has high setup and duplicate-bucket costs in small or dense
+    # scenes. A scalar pair pass is faster for the common small-scene case.
+    if len(active) <= 512:
+        for i, a in enumerate(active):
+            for b in active[i+1:]:
+                dispatch_pair(a, b)
+    else:
+        from collections import defaultdict
+
+        cell_size = 4.0
+        max_cells_per_object = 64
+        grid = defaultdict(list)
+        oversized = []
+        for obj in active:
+            mnx, mny, mnz, mxx, mxy, mxz = bounds[obj]
+            x0, y0, z0 = (int(v // cell_size) for v in (mnx, mny, mnz))
+            x1, y1, z1 = (int(v // cell_size) for v in (mxx, mxy, mxz))
+            cells = (x1-x0+1) * (y1-y0+1) * (z1-z0+1)
+            if cells > max_cells_per_object:
+                oversized.append(obj)
+                continue
+            for x in range(x0, x1+1):
+                for y in range(y0, y1+1):
+                    for z in range(z0, z1+1):
+                        grid[(x, y, z)].append(obj)
+
+        candidates = set()
+        for bucket in grid.values():
+            if len(bucket) < 2:
+                continue
+            for i, a in enumerate(bucket):
+                for b in bucket[i+1:]:
+                    if a.id < b.id:
+                        candidates.add((a, b))
+                    else:
+                        candidates.add((b, a))
+
+        if oversized:
+            for a in oversized:
+                for b in active:
+                    if a is not b:
+                        candidates.add((a, b) if a.id < b.id else (b, a))
+
+        for a, b in candidates:
+            dispatch_pair(a, b)
+
+    exited = engine._collision_pairs - current
+    if exited:
         by_id = {obj.id: obj for obj in engine._objects}
-        for aid, bid in engine._collision_pairs - current:
+        for aid, bid in exited:
             a, b = by_id.get(aid), by_id.get(bid)
             if a is not None:
                 callback = getattr(a, "on_exit", None)
