@@ -41,6 +41,7 @@ class Engine:
         self._update_callback = None
         self._running = False
         self._camera_active = False
+        self._low_quality_active = None
 
         self._native = load()
         self._configure_abi()
@@ -103,6 +104,9 @@ class Engine:
             ctypes.c_void_p, ctypes.c_int
         ]
         self._native.p3d_input_key_held.restype = ctypes.c_int
+
+        self._native.p3d_engine_set_low_quality.argtypes = [ctypes.c_void_p, ctypes.c_int]
+        self._native.p3d_engine_set_low_quality.restype = None
 
         self._native.p3d_engine_step.argtypes = [ctypes.c_void_p]
         self._native.p3d_engine_step.restype = ctypes.c_int
@@ -206,6 +210,11 @@ class Engine:
 
         while self._running:
             engine_ptr = ctypes.c_void_p(self._engine)
+
+            low_quality_enabled = bool(modes.low_quality)
+            if low_quality_enabled != self._low_quality_active:
+                self._native.p3d_engine_set_low_quality(engine_ptr, int(low_quality_enabled))
+                self._low_quality_active = low_quality_enabled
 
             camera_enabled = bool(modes.camera)
             self._native.p3d_camera_set_enabled(
