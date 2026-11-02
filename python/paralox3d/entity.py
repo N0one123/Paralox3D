@@ -8,7 +8,11 @@ from .collision import Collider
 
 def _detect_variable_name():
     try:
-        caller = inspect.currentframe().f_back
+        frame = inspect.currentframe()
+        constructor = frame.f_back if frame else None
+        caller = constructor.f_back if constructor else None
+        if caller is None:
+            return None
         for instruction in dis.get_instructions(caller.f_code):
             if instruction.offset <= caller.f_lasti:
                 continue
@@ -16,7 +20,7 @@ def _detect_variable_name():
                 return instruction.argval
             if instruction.opname.startswith("STORE_"):
                 return None
-            if instruction.opname not in ("CACHE", "EXTENDED_ARG"):
+            if instruction.opname not in ("CACHE", "EXTENDED_ARG", "NOP"):
                 break
     except Exception:
         pass
