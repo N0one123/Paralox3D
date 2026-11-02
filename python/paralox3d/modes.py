@@ -4,43 +4,28 @@ class _Modes:
     def __init__(self):
         self._developer = False
         self._camera = False
-        self._low_quality = False
-
-    @staticmethod
-    def _validate(name, value):
-        if not isinstance(value, bool):
-            raise TypeError(
-                f"Paralox3D Error: modes.{name} must be True or False. "
-                f"Received {type(value).__name__}."
-            )
 
     @property
-    def camera(self):
+    def camera(self) -> bool:
         return self._camera
 
     @camera.setter
-    def camera(self, value):
-        self._validate("camera", value)
+    def camera(self, value: bool) -> None:
+        if not isinstance(value, bool):
+            raise TypeError("Paralox3D Error: modes.camera must be True or False. " f"Received {type(value).__name__}.")
         self._camera = value
 
     @property
-    def developer(self):
+    def developer(self) -> bool:
         return self._developer
 
     @developer.setter
-    def developer(self, value):
-        self._validate("developer", value)
+    def developer(self, value: bool) -> None:
+        if not isinstance(value, bool):
+            raise TypeError(
+                "Paralox3D Error: modes.developer must be True or False. "
+                f"Received {type(value).__name__}."
+            )
         self._developer = value
-
-    @property
-    def low_quality(self):
-        """Enable faster rendering with back-face culling and flat cube shading."""
-        return self._low_quality
-
-    @low_quality.setter
-    def low_quality(self, value):
-        self._validate("low_quality", value)
-        self._low_quality = value
-
 
 modes = _Modes()
