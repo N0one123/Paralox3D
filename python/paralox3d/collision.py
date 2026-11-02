@@ -75,27 +75,92 @@ def Collision(a,b=None):
     return [o for o in a._engine._objects if o is not a and o.collider is not None and _overlaps(a_collider,o.collider)]
 
 def _dispatch_collision_events(engine):
-    current=set()
-    objects=tuple(engine._objects)
-    for i,a in enumerate(objects):
-        if not a.enabled or not a.collider.enabled:
+    """Grid broadphase: only test objects sharing one or more spatial cells."""
+    from collections import defaultdict
+
+    cell_size = 4.0
+    max_cells_per_object = 64
+    grid = defaultdict(list)
+    oversized = []
+    active = []
+    bounds = {}
+
+    for obj in engine._objects:
+        collider = obj.collider
+        if not obj.enabled or collider is None or not collider.enabled:
             continue
-        for b in objects[i+1:]:
-            if not b.enabled or not b.collider.enabled or not _overlaps(a.collider,b.collider):
-                continue
-            pair=(min(a.id,b.id),max(a.id,b.id))
-            current.add(pair)
-            if pair not in engine._collision_pairs:
-                if getattr(a,"on_enter",None): a.on_enter(b)
-                if getattr(b,"on_enter",None): b.on_enter(a)
-            if getattr(a,"on_collision",None): a.on_collision(b)
-            if getattr(b,"on_collision",None): b.on_collision(a)
-    for pair in engine._collision_pairs-current:
-        a=next((o for o in objects if o.id==pair[0]),None)
-        b=next((o for o in objects if o.id==pair[1]),None)
-        if a is not None and getattr(a,"on_exit",None): a.on_exit(b)
-        if b is not None and getattr(b,"on_exit",None): b.on_exit(a)
-    engine._collision_pairs=current
+        mn, mx = collider.min, collider.max
+        active.append(obj)
+        bounds[obj] = (mn, mx)
+        x0, y0, z0 = (int(v // cell_size) for v in (mn.x, mn.y, mn.z))
+        x1, y1, z1 = (int(v // cell_size) for v in (mx.x, mx.y, mx.z))
+        cells = (x1-x0+1) * (y1-y0+1) * (z1-z0+1)
+        if cells > max_cells_per_object:
+            oversized.append(obj)
+            continue
+        for x in range(x0, x1+1):
+            for y in range(y0, y1+1):
+                for z in range(z0, z1+1):
+                    grid[(x, y, z)].append(obj)
+
+    candidates = set()
+    for bucket in grid.values():
+        if len(bucket) < 2:
+            continue
+        for i, a in enumerate(bucket):
+            for b in bucket[i+1:]:
+                if a.id < b.id:
+                    candidates.add((a, b))
+                else:
+                    candidates.add((b, a))
+
+    # Very large colliders are deliberately kept out of the grid to avoid
+    # inserting thousands of cells; compare them against active objects.
+    if oversized:
+        for a in oversized:
+            for b in active:
+                if a is not b:
+                    candidates.add((a, b) if a.id < b.id else (b, a))
+
+    current = set()
+    for a, b in candidates:
+        if not _compatible(a.collider, b.collider):
+            continue
+        amin, amax = bounds[a]
+        bmin, bmax = bounds[b]
+        if not (amin.x <= bmax.x and amax.x >= bmin.x
+                and amin.y <= bmax.y and amax.y >= bmin.y
+                and amin.z <= bmax.z and amax.z >= bmin.z):
+            continue
+        pair = (a.id, b.id)
+        current.add(pair)
+        if pair not in engine._collision_pairs:
+            callback = getattr(a, "on_enter", None)
+            if callback:
+                callback(b)
+            callback = getattr(b, "on_enter", None)
+            if callback:
+                callback(a)
+        callback = getattr(a, "on_collision", None)
+        if callback:
+            callback(b)
+        callback = getattr(b, "on_collision", None)
+        if callback:
+            callback(a)
+
+    if engine._collision_pairs - current:
+        by_id = {obj.id: obj for obj in engine._objects}
+        for aid, bid in engine._collision_pairs - current:
+            a, b = by_id.get(aid), by_id.get(bid)
+            if a is not None:
+                callback = getattr(a, "on_exit", None)
+                if callback:
+                    callback(b)
+            if b is not None:
+                callback = getattr(b, "on_exit", None)
+                if callback:
+                    callback(a)
+    engine._collision_pairs = current
 
 class RaycastHit:
     __slots__=("object","entity","point","normal","distance")
