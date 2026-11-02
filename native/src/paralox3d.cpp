@@ -107,6 +107,10 @@ void p3d_engine_set_debug_rays(P3DEngine* engine, const float* rays, int count) 
     engine->renderer->set_debug_rays(rays, count);
 }
 
+void p3d_engine_set_low_quality(P3DEngine* engine, int enabled) {
+    if (engine && engine->renderer) engine->renderer->set_low_quality(enabled != 0);
+}
+
 int p3d_engine_step(P3DEngine* engine) {
     if (!engine || !engine->running || !engine->renderer) return 0;
     if (!engine->renderer->begin_frame()) {
