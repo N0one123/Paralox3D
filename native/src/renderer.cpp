@@ -59,17 +59,11 @@ public:
             glNewList(cube_list_, GL_COMPILE);
             const float s = 0.5f;
             glBegin(GL_QUADS);
-            glColor3f(0.70f,0.70f,0.70f);
             glVertex3f(-s,-s,s); glVertex3f(s,-s,s); glVertex3f(s,s,s); glVertex3f(-s,s,s);
-            glColor3f(0.50f,0.50f,0.50f);
             glVertex3f(s,-s,-s); glVertex3f(-s,-s,-s); glVertex3f(-s,s,-s); glVertex3f(s,s,-s);
-            glColor3f(0.60f,0.60f,0.60f);
             glVertex3f(-s,-s,-s); glVertex3f(-s,-s,s); glVertex3f(-s,s,s); glVertex3f(-s,s,-s);
-            glColor3f(0.82f,0.82f,0.82f);
             glVertex3f(s,-s,s); glVertex3f(s,-s,-s); glVertex3f(s,s,-s); glVertex3f(s,s,s);
-            glColor3f(1.0f,1.0f,1.0f);
             glVertex3f(-s,s,s); glVertex3f(s,s,s); glVertex3f(s,s,-s); glVertex3f(-s,s,-s);
-            glColor3f(0.38f,0.38f,0.38f);
             glVertex3f(-s,-s,-s); glVertex3f(s,-s,-s); glVertex3f(s,-s,s); glVertex3f(-s,-s,s);
             glEnd();
             glEndList();
@@ -120,15 +114,33 @@ public:
     }
 
     void draw_cube(float x,float y,float z,float sx,float sy,float sz,float pitch,float yaw,float roll,float r,float g,float b,float a,bool visible) override {
-        if (!visible || !cube_list_) return;
+        if (!visible) return;
         glPushMatrix();
         glTranslatef(x, y, z);
         glRotatef(yaw, 0.0f, 1.0f, 0.0f);
         glRotatef(pitch, 1.0f, 0.0f, 0.0f);
         glRotatef(roll, 0.0f, 0.0f, 1.0f);
         glScalef(sx, sy, sz);
-        glColor4f(r, g, b, a);
-        glCallList(cube_list_);
+        if (low_quality_ && cube_list_) {
+            glColor4f(r, g, b, a);
+            glCallList(cube_list_);
+        } else {
+            const float s = 0.5f;
+            glBegin(GL_QUADS);
+            glColor3f(r*0.70f,g*0.70f,b*0.70f);
+            glVertex3f(-s,-s,s); glVertex3f(s,-s,s); glVertex3f(s,s,s); glVertex3f(-s,s,s);
+            glColor3f(r*0.50f,g*0.50f,b*0.50f);
+            glVertex3f(s,-s,-s); glVertex3f(-s,-s,-s); glVertex3f(-s,s,-s); glVertex3f(s,s,-s);
+            glColor3f(r*0.60f,g*0.60f,b*0.60f);
+            glVertex3f(-s,-s,-s); glVertex3f(-s,-s,s); glVertex3f(-s,s,s); glVertex3f(-s,s,-s);
+            glColor3f(r*0.82f,g*0.82f,b*0.82f);
+            glVertex3f(s,-s,s); glVertex3f(s,-s,-s); glVertex3f(s,s,-s); glVertex3f(s,s,s);
+            glColor3f(r,g,b);
+            glVertex3f(-s,s,s); glVertex3f(s,s,s); glVertex3f(s,s,-s); glVertex3f(-s,s,-s);
+            glColor3f(r*0.38f,g*0.38f,b*0.38f);
+            glVertex3f(-s,-s,-s); glVertex3f(s,-s,-s); glVertex3f(s,-s,s); glVertex3f(-s,-s,s);
+            glEnd();
+        }
         glPopMatrix();
     }
 
