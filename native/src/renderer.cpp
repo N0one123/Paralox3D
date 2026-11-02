@@ -54,20 +54,6 @@ public:
             return false;
 
         glEnable(GL_DEPTH_TEST);
-        cube_list_ = glGenLists(1);
-        if (cube_list_) {
-            glNewList(cube_list_, GL_COMPILE);
-            const float s = 0.5f;
-            glBegin(GL_QUADS);
-            glVertex3f(-s,-s,s); glVertex3f(s,-s,s); glVertex3f(s,s,s); glVertex3f(-s,s,s);
-            glVertex3f(s,-s,-s); glVertex3f(-s,-s,-s); glVertex3f(-s,s,-s); glVertex3f(s,s,-s);
-            glVertex3f(-s,-s,-s); glVertex3f(-s,-s,s); glVertex3f(-s,s,s); glVertex3f(-s,s,-s);
-            glVertex3f(s,-s,s); glVertex3f(s,-s,-s); glVertex3f(s,s,-s); glVertex3f(s,s,s);
-            glVertex3f(-s,s,s); glVertex3f(s,s,s); glVertex3f(s,s,-s); glVertex3f(-s,s,-s);
-            glVertex3f(-s,-s,-s); glVertex3f(s,-s,-s); glVertex3f(s,-s,s); glVertex3f(-s,-s,s);
-            glEnd();
-            glEndList();
-        }
         glClearColor(0.08f, 0.10f, 0.14f, 1.0f);
         resize(width_, height_);
         running_ = true;
@@ -101,46 +87,35 @@ public:
         return true;
     }
 
-    void set_low_quality(bool enabled) override {
-        low_quality_ = enabled;
-        if (enabled) {
-            glEnable(GL_CULL_FACE);
-            glCullFace(GL_BACK);
-            glFrontFace(GL_CW);
-        } else {
-            glDisable(GL_CULL_FACE);
-            glFrontFace(GL_CCW);
-        }
-    }
-
-    void draw_cube(float x,float y,float z,float sx,float sy,float sz,float pitch,float yaw,float roll,float r,float g,float b,float a,bool visible) override {
-        if (!visible) return;
+    void draw_cube(float x,float y,float z,float sx,float sy,float sz,float pitch,float yaw,float roll,float r,float g,float b,float a,bool visible) override { if(!visible)return;
+        const float s = 0.5f;
         glPushMatrix();
         glTranslatef(x, y, z);
         glRotatef(yaw, 0.0f, 1.0f, 0.0f);
         glRotatef(pitch, 1.0f, 0.0f, 0.0f);
         glRotatef(roll, 0.0f, 0.0f, 1.0f);
         glScalef(sx, sy, sz);
-        if (low_quality_ && cube_list_) {
-            glColor4f(r, g, b, a);
-            glCallList(cube_list_);
-        } else {
-            const float s = 0.5f;
-            glBegin(GL_QUADS);
-            glColor3f(r*0.70f,g*0.70f,b*0.70f);
-            glVertex3f(-s,-s,s); glVertex3f(s,-s,s); glVertex3f(s,s,s); glVertex3f(-s,s,s);
-            glColor3f(r*0.50f,g*0.50f,b*0.50f);
-            glVertex3f(s,-s,-s); glVertex3f(-s,-s,-s); glVertex3f(-s,s,-s); glVertex3f(s,s,-s);
-            glColor3f(r*0.60f,g*0.60f,b*0.60f);
-            glVertex3f(-s,-s,-s); glVertex3f(-s,-s,s); glVertex3f(-s,s,s); glVertex3f(-s,s,-s);
-            glColor3f(r*0.82f,g*0.82f,b*0.82f);
-            glVertex3f(s,-s,s); glVertex3f(s,-s,-s); glVertex3f(s,s,-s); glVertex3f(s,s,s);
-            glColor3f(r,g,b);
-            glVertex3f(-s,s,s); glVertex3f(s,s,s); glVertex3f(s,s,-s); glVertex3f(-s,s,-s);
-            glColor3f(r*0.38f,g*0.38f,b*0.38f);
-            glVertex3f(-s,-s,-s); glVertex3f(s,-s,-s); glVertex3f(s,-s,s); glVertex3f(-s,-s,s);
-            glEnd();
-        }
+        glBegin(GL_QUADS);
+
+        glColor3f(r*0.70f,g*0.70f,b*0.70f);
+        glVertex3f(-s,-s,s); glVertex3f(s,-s,s); glVertex3f(s,s,s); glVertex3f(-s,s,s);
+
+        glColor3f(r*0.50f,g*0.50f,b*0.50f);
+        glVertex3f(s,-s,-s); glVertex3f(-s,-s,-s); glVertex3f(-s,s,-s); glVertex3f(s,s,-s);
+
+        glColor3f(r*0.60f,g*0.60f,b*0.60f);
+        glVertex3f(-s,-s,-s); glVertex3f(-s,-s,s); glVertex3f(-s,s,s); glVertex3f(-s,s,-s);
+
+        glColor3f(r*0.82f,g*0.82f,b*0.82f);
+        glVertex3f(s,-s,s); glVertex3f(s,-s,-s); glVertex3f(s,s,-s); glVertex3f(s,s,s);
+
+        glColor3f(r,g,b);
+        glVertex3f(-s,s,s); glVertex3f(s,s,s); glVertex3f(s,s,-s); glVertex3f(-s,s,-s);
+
+        glColor3f(r*0.38f,g*0.38f,b*0.38f);
+        glVertex3f(-s,-s,-s); glVertex3f(s,-s,-s); glVertex3f(s,-s,s); glVertex3f(-s,-s,s);
+
+        glEnd();
         glPopMatrix();
     }
 
@@ -261,7 +236,6 @@ public:
     }
 
     ~Win32OpenGLRenderer() override {
-        if (cube_list_ && hglrc_) { wglMakeCurrent(hdc_, hglrc_); glDeleteLists(cube_list_, 1); }
         if (cursor_hidden_) {
             while (ShowCursor(TRUE) < 0) {}
             cursor_hidden_ = false;
@@ -471,8 +445,6 @@ private:
         return DefWindowProcA(hwnd, msg, wparam, lparam);
     }
 
-    GLuint cube_list_ = 0;
-    bool low_quality_ = false;
     HWND hwnd_ = nullptr;
     HDC hdc_ = nullptr;
     HGLRC hglrc_ = nullptr;
