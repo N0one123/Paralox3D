@@ -75,27 +75,95 @@ def Collision(a,b=None):
     return [o for o in a._engine._objects if o is not a and o.collider is not None and _overlaps(a_collider,o.collider)]
 
 def _dispatch_collision_events(engine):
-    current=set()
-    objects=tuple(engine._objects)
-    for i,a in enumerate(objects):
-        if not a.enabled or not a.collider.enabled:
+    """Grid broadphase: only test objects sharing one or more spatial cells."""
+    from collections import defaultdict
+
+    cell_size = 4.0
+    max_cells_per_object = 64
+    grid = defaultdict(list)
+    oversized = []
+    active = []
+    bounds = {}
+
+    for obj in engine._objects:
+        collider = obj.collider
+        if not obj.enabled or collider is None or not collider.enabled:
             continue
-        for b in objects[i+1:]:
-            if not b.enabled or not b.collider.enabled or not _overlaps(a.collider,b.collider):
-                continue
-            pair=(min(a.id,b.id),max(a.id,b.id))
-            current.add(pair)
-            if pair not in engine._collision_pairs:
-                if getattr(a,"on_enter",None): a.on_enter(b)
-                if getattr(b,"on_enter",None): b.on_enter(a)
-            if getattr(a,"on_collision",None): a.on_collision(b)
-            if getattr(b,"on_collision",None): b.on_collision(a)
-    for pair in engine._collision_pairs-current:
-        a=next((o for o in objects if o.id==pair[0]),None)
-        b=next((o for o in objects if o.id==pair[1]),None)
-        if a is not None and getattr(a,"on_exit",None): a.on_exit(b)
-        if b is not None and getattr(b,"on_exit",None): b.on_exit(a)
-    engine._collision_pairs=current
+        p, off, size = collider.owner._position, collider._offset, collider._size
+        hx, hy, hz = abs(size.x)*0.5, abs(size.y)*0.5, abs(size.z)*0.5
+        mnx, mny, mnz = p.x+off.x-hx, p.y+off.y-hy, p.z+off.z-hz
+        mxx, mxy, mxz = p.x+off.x+hx, p.y+off.y+hy, p.z+off.z+hz
+        active.append(obj)
+        bounds[obj] = (mnx, mny, mnz, mxx, mxy, mxz)
+        x0, y0, z0 = (int(v // cell_size) for v in (mnx, mny, mnz))
+        x1, y1, z1 = (int(v // cell_size) for v in (mxx, mxy, mxz))
+        cells = (x1-x0+1) * (y1-y0+1) * (z1-z0+1)
+        if cells > max_cells_per_object:
+            oversized.append(obj)
+            continue
+        for x in range(x0, x1+1):
+            for y in range(y0, y1+1):
+                for z in range(z0, z1+1):
+                    grid[(x, y, z)].append(obj)
+
+    candidates = set()
+    for bucket in grid.values():
+        if len(bucket) < 2:
+            continue
+        for i, a in enumerate(bucket):
+            for b in bucket[i+1:]:
+                if a.id < b.id:
+                    candidates.add((a, b))
+                else:
+                    candidates.add((b, a))
+
+    # Very large colliders are deliberately kept out of the grid to avoid
+    # inserting thousands of cells; compare them against active objects.
+    if oversized:
+        for a in oversized:
+            for b in active:
+                if a is not b:
+                    candidates.add((a, b) if a.id < b.id else (b, a))
+
+    current = set()
+    for a, b in candidates:
+        if not _compatible(a.collider, b.collider):
+            continue
+        ax0, ay0, az0, ax1, ay1, az1 = bounds[a]
+        bx0, by0, bz0, bx1, by1, bz1 = bounds[b]
+        if not (ax0 <= bx1 and ax1 >= bx0
+                and ay0 <= by1 and ay1 >= by0
+                and az0 <= bz1 and az1 >= bz0):
+            continue
+        pair = (a.id, b.id)
+        current.add(pair)
+        if pair not in engine._collision_pairs:
+            callback = getattr(a, "on_enter", None)
+            if callback:
+                callback(b)
+            callback = getattr(b, "on_enter", None)
+            if callback:
+                callback(a)
+        callback = getattr(a, "on_collision", None)
+        if callback:
+            callback(b)
+        callback = getattr(b, "on_collision", None)
+        if callback:
+            callback(a)
+
+    if engine._collision_pairs - current:
+        by_id = {obj.id: obj for obj in engine._objects}
+        for aid, bid in engine._collision_pairs - current:
+            a, b = by_id.get(aid), by_id.get(bid)
+            if a is not None:
+                callback = getattr(a, "on_exit", None)
+                if callback:
+                    callback(b)
+            if b is not None:
+                callback = getattr(b, "on_exit", None)
+                if callback:
+                    callback(a)
+    engine._collision_pairs = current
 
 class RaycastHit:
     __slots__=("object","entity","point","normal","distance")
@@ -123,48 +191,91 @@ def _ray_bounds(origin,direction,min_x,min_y,min_z,max_x,max_y,max_z,distance):
     return t0,normal
 
 def raycast(origin,direction,distance=1000,ignore=()):
+    """Return the closest collider hit by a ray.
+
+    origin may be an Object, Collider, an Object.position Vec3, or a 3-tuple.
+    The origin object's own collider is always excluded.
+    """
     from .engine import get_default_engine
-    engine=get_default_engine()
-    origin_owner=origin if hasattr(origin,"position") else getattr(origin,"owner",None)
-    origin=origin.position if origin_owner is not None else origin
-    origin=origin if isinstance(origin,Vec3) else Vec3(*origin)
-    direction=direction if isinstance(direction,Vec3) else Vec3(*direction)
-    length_sq=direction.length_squared()
-    if length_sq==0: return None
-    direction=direction*(1.0/(length_sq**0.5))
-    ignored=set(ignore)
+
+    origin_owner = None
+    if isinstance(origin, Vec3):
+        origin_owner = origin.owner
+        origin_position = origin
+    elif hasattr(origin, "position"):
+        origin_owner = origin if hasattr(origin, "_engine") else getattr(origin, "owner", None)
+        origin_position = origin.position
+    else:
+        origin_position = origin
+
+    origin_position = origin_position if isinstance(origin_position, Vec3) else Vec3(*origin_position)
+    direction = direction if isinstance(direction, Vec3) else Vec3(*direction)
+    distance = float(distance)
+    if distance < 0:
+        raise ValueError("raycast() distance must be non-negative.")
+    length_sq = direction.length_squared()
+    if length_sq == 0:
+        return None
+    direction = direction * (1.0 / (length_sq ** 0.5))
+
+    if ignore is None:
+        ignored = set()
+    elif isinstance(ignore, (tuple, list, set, frozenset)):
+        ignored = set(ignore)
+    else:
+        ignored = {ignore}
     if origin_owner is not None:
         ignored.add(origin_owner)
-    best=None
-    for o in engine._objects:
-        if o in ignored or not o.enabled:
+
+    engine = getattr(origin_owner, "_engine", None) or get_default_engine()
+    best = None
+    for obj in engine._objects:
+        if obj in ignored or not obj.enabled:
             continue
-        collider=o.collider
-        if not collider.enabled:
+        collider = obj.collider
+        if collider is None or not collider.enabled:
             continue
-        p=collider.owner._position
-        off=collider._offset
-        size=collider._size
-        cx,cy,cz=p.x+off.x,p.y+off.y,p.z+off.z
-        hx,hy,hz=abs(size.x)*0.5,abs(size.y)*0.5,abs(size.z)*0.5
-        hit=_ray_bounds(origin,direction,cx-hx,cy-hy,cz-hz,cx+hx,cy+hy,cz+hz,distance)
-        if hit and (best is None or hit[0]<best.distance):
-            best=RaycastHit(o,origin+direction*hit[0],hit[1],hit[0])
+
+        p = collider.owner._position
+        off = collider._offset
+        size = collider._size
+        cx, cy, cz = p.x + off.x, p.y + off.y, p.z + off.z
+        hx, hy, hz = abs(size.x) * 0.5, abs(size.y) * 0.5, abs(size.z) * 0.5
+        hit = _ray_bounds(
+            origin_position, direction,
+            cx-hx, cy-hy, cz-hz, cx+hx, cy+hy, cz+hz, distance
+        )
+        if hit is not None and (best is None or hit[0] < best.distance):
+            best = RaycastHit(
+                obj, origin_position + direction * hit[0], hit[1], hit[0]
+            )
+
     if modes.developer:
-        end=best.point if best is not None else origin+direction*distance
-        engine._debug_raycast(origin,end,origin_owner)
+        end = best.point if best is not None else origin_position + direction * distance
+        engine._debug_raycast(origin_position, end, origin_owner)
     return best
 
 def boxcast(center,size,direction,distance=1,ignore=()):
-    c=center if isinstance(center,Vec3) else Vec3(*center)
-    s=size if isinstance(size,Vec3) else Vec3(*size)
-    d=(direction if isinstance(direction,Vec3) else Vec3(*direction)).normalized()
-    best=None
-    for o in __import__("paralox3d").get_default_engine()._objects:
-        if o in ignore or not o.enabled or not o.collider.enabled: continue
-        hit=_ray(c,d,o.collider.min-s*.5,o.collider.max+s*.5,distance)
-        if hit and (best is None or hit[0]<best.distance):
-            best=RaycastHit(o,c+d*hit[0],hit[1],hit[0])
+    c = center if isinstance(center, Vec3) else Vec3(*center)
+    s = size if isinstance(size, Vec3) else Vec3(*size)
+    d = direction if isinstance(direction, Vec3) else Vec3(*direction)
+    length_sq = d.length_squared()
+    if length_sq == 0:
+        return None
+    d = d * (1.0 / (length_sq ** 0.5))
+    ignored = set(ignore or ())
+    best = None
+    engine = __import__("paralox3d").get_default_engine()
+    for obj in engine._objects:
+        collider = obj.collider
+        if obj in ignored or not obj.enabled or collider is None or not collider.enabled:
+            continue
+        p, off, size3 = collider.owner._position, collider._offset, collider._size
+        cx, cy, cz = p.x + off.x, p.y + off.y, p.z + off.z
+        hx, hy, hz = abs(size3.x)*0.5+s.x*0.5, abs(size3.y)*0.5+s.y*0.5, abs(size3.z)*0.5+s.z*0.5
+        hit = _ray_bounds(c, d, cx-hx, cy-hy, cz-hz, cx+hx, cy+hy, cz+hz, distance)
+        if hit is not None and (best is None or hit[0] < best.distance):
+            best = RaycastHit(obj, c + d*hit[0], hit[1], hit[0])
     return best
 
 def spherecast(center,radius,direction,distance=1,ignore=()):

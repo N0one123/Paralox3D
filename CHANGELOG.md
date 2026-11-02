@@ -1,3 +1,13 @@
+# Changelog
+
+## Unreleased
+
+- Fixed raycast origin ownership so Object, Collider, and Object.position origins use the correct engine and exclude their source object.
+- Corrected Object variable-name detection used by RaycastHit.object.
+- Added a spatial-grid broadphase for collision callbacks and reduced per-frame collision allocations.
+- Added modes.low_quality for cached cube geometry and back-face culling.
+- Added a 10,000-cube rendering benchmark and reduced object-registration/component-update overhead.
+
 # Paralox3D 0.1.1
 
 0.1.1 expands the beginner-friendly API while keeping the low-boilerplate design of 0.1.0.

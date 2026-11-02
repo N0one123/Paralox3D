@@ -35,12 +35,15 @@ class Engine:
         self.height = height
         self.max_fps = max_fps
         self._objects = []
+        self._object_set = set()
+        self._component_objects = set()
         self._object_id_counter = 0
         self._collision_pairs = set()
         self._debug_rays = {}
         self._update_callback = None
         self._running = False
         self._camera_active = False
+        self._low_quality_active = None
 
         self._native = load()
         self._configure_abi()
@@ -103,6 +106,9 @@ class Engine:
             ctypes.c_void_p, ctypes.c_int
         ]
         self._native.p3d_input_key_held.restype = ctypes.c_int
+
+        self._native.p3d_engine_set_low_quality.argtypes = [ctypes.c_void_p, ctypes.c_int]
+        self._native.p3d_engine_set_low_quality.restype = None
 
         self._native.p3d_engine_step.argtypes = [ctypes.c_void_p]
         self._native.p3d_engine_step.restype = ctypes.c_int
@@ -174,13 +180,16 @@ class Engine:
         self._native.p3d_mouse_set_locked(ctypes.c_void_p(self._engine), int(bool(locked)))
 
     def register(self, obj):
-        if obj not in self._objects:
+        if obj not in self._object_set:
             self._objects.append(obj)
+            self._object_set.add(obj)
         return obj
 
     def unregister(self, obj):
-        if obj in self._objects:
+        if obj in self._object_set:
             self._objects.remove(obj)
+            self._object_set.discard(obj)
+        self._component_objects.discard(obj)
         self._collision_pairs = {p for p in self._collision_pairs if obj.id not in p}
         self._debug_rays.pop(obj, None)
 
@@ -193,8 +202,9 @@ class Engine:
     def update(self):
         if self._update_callback:
             self._update_callback()
-        for obj in tuple(self._objects):
-            obj._update_components()
+        for obj in tuple(self._component_objects):
+            if obj.enabled and obj._components:
+                obj._update_components()
 
     def start(self, update=None):
         if update is not None:
@@ -206,6 +216,11 @@ class Engine:
 
         while self._running:
             engine_ptr = ctypes.c_void_p(self._engine)
+
+            low_quality_enabled = bool(modes.low_quality)
+            if low_quality_enabled != self._low_quality_active:
+                self._native.p3d_engine_set_low_quality(engine_ptr, int(low_quality_enabled))
+                self._low_quality_active = low_quality_enabled
 
             camera_enabled = bool(modes.camera)
             self._native.p3d_camera_set_enabled(

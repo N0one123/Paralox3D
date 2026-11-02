@@ -92,7 +92,7 @@ Use `Collision(a, b)` for a pair or `Collision(a)` to find all compatible overla
 
 Spatial queries include:
 
-- `raycast(origin, direction, distance=...)`
+- `raycast(origin, direction, distance=...)` (Object, Collider, and Object.position origins are supported)
 - `boxcast(center, size, direction, distance=...)`
 - `spherecast(center, radius, direction, distance=...)`
 - `overlap_box(center, size)`
@@ -129,6 +129,15 @@ Scene.switch(loaded)
 ```
 
 Scenes support lifecycle callbacks, clearing, JSON persistence, loading, and switching.
+
+### Rendering quality
+
+```python
+modes.low_quality = True   # Faster cube rendering with back-face culling
+modes.low_quality = False  # Normal rendering
+```
+
+Low-quality mode enables back-face culling and uses cached native cube geometry. This removes faces turned away from the camera; it does **not** yet remove faces hidden between adjacent cubes, which requires mesh/chunk generation. Rendering performance depends on hardware, resolution, scene visibility, and game logic. Use `benchmarks/scene_10k.py` to measure a 10,000-cube scene on your computer.
 
 ### Developer mode
 

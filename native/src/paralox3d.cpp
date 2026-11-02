@@ -21,7 +21,7 @@ P3DEngine* p3d_engine_create(int width, int height, const char* title) {
     auto* engine = new P3DEngine{};
     engine->width = width;
     engine->height = height;
-    engine->transforms.reserve(1024);
+    engine->transforms.reserve(16384);
     engine->renderer.reset(create_platform_renderer());
     if (!engine->renderer || !engine->renderer->create(width, height, title)) {
         delete engine;
@@ -105,6 +105,10 @@ void p3d_engine_set_debug_colliders(P3DEngine* engine, const float* bounds, int 
 void p3d_engine_set_debug_rays(P3DEngine* engine, const float* rays, int count) {
     if (!engine || !engine->renderer) return;
     engine->renderer->set_debug_rays(rays, count);
+}
+
+void p3d_engine_set_low_quality(P3DEngine* engine, int enabled) {
+    if (engine && engine->renderer) engine->renderer->set_low_quality(enabled != 0);
 }
 
 int p3d_engine_step(P3DEngine* engine) {

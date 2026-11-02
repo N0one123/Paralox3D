@@ -8,7 +8,11 @@ from .collision import Collider
 
 def _detect_variable_name():
     try:
-        caller = inspect.currentframe().f_back
+        frame = inspect.currentframe()
+        constructor = frame.f_back if frame else None
+        caller = constructor.f_back if constructor else None
+        if caller is None:
+            return None
         for instruction in dis.get_instructions(caller.f_code):
             if instruction.offset <= caller.f_lasti:
                 continue
@@ -16,7 +20,7 @@ def _detect_variable_name():
                 return instruction.argval
             if instruction.opname.startswith("STORE_"):
                 return None
-            if instruction.opname not in ("CACHE", "EXTENDED_ARG"):
+            if instruction.opname not in ("CACHE", "EXTENDED_ARG", "NOP"):
                 break
     except Exception:
         pass
@@ -167,17 +171,27 @@ class Object:
     def move_forward(self,distance):return self.translate(*(self.forward*distance))
     def move_right(self,distance):return self.translate(*(self.right*distance))
     def move_up(self,distance):return self.translate(*(self.up*distance))
-    def add(self,component):component.owner=self;self._components.append(component);component.on_start();return component
+    def add(self,component):
+        component.owner=self
+        self._components.append(component)
+        self._engine._component_objects.add(self)
+        component.on_start()
+        return component
     def get(self,component_type):return next((c for c in self._components if isinstance(c,component_type)),None)
     def remove(self,component):
-        if component in self._components:self._components.remove(component);component.on_destroy();component.owner=None
+        if component in self._components:
+            self._components.remove(component)
+            component.on_destroy()
+            component.owner=None
+            if not self._components:
+                self._engine._component_objects.discard(self)
     def destroy(self):
         if self._destroyed:return
         self._last_action="destroyed"
         for c in tuple(self._children):c.destroy()
         if self.parent and self in self.parent._children:self.parent._children.remove(self)
         for c in tuple(self._components):c.on_destroy()
-        self._components.clear();self._destroyed=True;self._enabled=False;self._visible=False
+        self._components.clear();self._engine._component_objects.discard(self);self._destroyed=True;self._enabled=False;self._visible=False
         self.collider=None
         self._engine.unregister(self)
         self._engine._destroy_entity(self._handle)
