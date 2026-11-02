@@ -89,11 +89,14 @@ def _dispatch_collision_events(engine):
         collider = obj.collider
         if not obj.enabled or collider is None or not collider.enabled:
             continue
-        mn, mx = collider.min, collider.max
+        p, off, size = collider.owner._position, collider._offset, collider._size
+        hx, hy, hz = abs(size.x)*0.5, abs(size.y)*0.5, abs(size.z)*0.5
+        mnx, mny, mnz = p.x+off.x-hx, p.y+off.y-hy, p.z+off.z-hz
+        mxx, mxy, mxz = p.x+off.x+hx, p.y+off.y+hy, p.z+off.z+hz
         active.append(obj)
-        bounds[obj] = (mn, mx)
-        x0, y0, z0 = (int(v // cell_size) for v in (mn.x, mn.y, mn.z))
-        x1, y1, z1 = (int(v // cell_size) for v in (mx.x, mx.y, mx.z))
+        bounds[obj] = (mnx, mny, mnz, mxx, mxy, mxz)
+        x0, y0, z0 = (int(v // cell_size) for v in (mnx, mny, mnz))
+        x1, y1, z1 = (int(v // cell_size) for v in (mxx, mxy, mxz))
         cells = (x1-x0+1) * (y1-y0+1) * (z1-z0+1)
         if cells > max_cells_per_object:
             oversized.append(obj)
@@ -126,11 +129,11 @@ def _dispatch_collision_events(engine):
     for a, b in candidates:
         if not _compatible(a.collider, b.collider):
             continue
-        amin, amax = bounds[a]
-        bmin, bmax = bounds[b]
-        if not (amin.x <= bmax.x and amax.x >= bmin.x
-                and amin.y <= bmax.y and amax.y >= bmin.y
-                and amin.z <= bmax.z and amax.z >= bmin.z):
+        ax0, ay0, az0, ax1, ay1, az1 = bounds[a]
+        bx0, by0, bz0, bx1, by1, bz1 = bounds[b]
+        if not (ax0 <= bx1 and ax1 >= bx0
+                and ay0 <= by1 and ay1 >= by0
+                and az0 <= bz1 and az1 >= bz0):
             continue
         pair = (a.id, b.id)
         current.add(pair)
