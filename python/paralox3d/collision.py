@@ -123,36 +123,68 @@ def _ray_bounds(origin,direction,min_x,min_y,min_z,max_x,max_y,max_z,distance):
     return t0,normal
 
 def raycast(origin,direction,distance=1000,ignore=()):
+    """Return the closest collider hit by a ray.
+
+    origin may be an Object, Collider, an Object.position Vec3, or a 3-tuple.
+    The origin object's own collider is always excluded.
+    """
     from .engine import get_default_engine
-    engine=get_default_engine()
-    origin_owner=origin if hasattr(origin,"position") else getattr(origin,"owner",None)
-    origin=origin.position if origin_owner is not None else origin
-    origin=origin if isinstance(origin,Vec3) else Vec3(*origin)
-    direction=direction if isinstance(direction,Vec3) else Vec3(*direction)
-    length_sq=direction.length_squared()
-    if length_sq==0: return None
-    direction=direction*(1.0/(length_sq**0.5))
-    ignored=set(ignore)
+
+    origin_owner = None
+    if isinstance(origin, Vec3):
+        origin_owner = origin.owner
+        origin_position = origin
+    elif hasattr(origin, "position"):
+        origin_owner = origin if hasattr(origin, "_engine") else getattr(origin, "owner", None)
+        origin_position = origin.position
+    else:
+        origin_position = origin
+
+    origin_position = origin_position if isinstance(origin_position, Vec3) else Vec3(*origin_position)
+    direction = direction if isinstance(direction, Vec3) else Vec3(*direction)
+    distance = float(distance)
+    if distance < 0:
+        raise ValueError("raycast() distance must be non-negative.")
+    length_sq = direction.length_squared()
+    if length_sq == 0:
+        return None
+    direction = direction * (1.0 / (length_sq ** 0.5))
+
+    if ignore is None:
+        ignored = set()
+    elif isinstance(ignore, (tuple, list, set, frozenset)):
+        ignored = set(ignore)
+    else:
+        ignored = {ignore}
     if origin_owner is not None:
         ignored.add(origin_owner)
-    best=None
-    for o in engine._objects:
-        if o in ignored or not o.enabled:
+
+    engine = getattr(origin_owner, "_engine", None) or get_default_engine()
+    best = None
+    for obj in engine._objects:
+        if obj in ignored or not obj.enabled:
             continue
-        collider=o.collider
-        if not collider.enabled:
+        collider = obj.collider
+        if collider is None or not collider.enabled:
             continue
-        p=collider.owner._position
-        off=collider._offset
-        size=collider._size
-        cx,cy,cz=p.x+off.x,p.y+off.y,p.z+off.z
-        hx,hy,hz=abs(size.x)*0.5,abs(size.y)*0.5,abs(size.z)*0.5
-        hit=_ray_bounds(origin,direction,cx-hx,cy-hy,cz-hz,cx+hx,cy+hy,cz+hz,distance)
-        if hit and (best is None or hit[0]<best.distance):
-            best=RaycastHit(o,origin+direction*hit[0],hit[1],hit[0])
+
+        p = collider.owner._position
+        off = collider._offset
+        size = collider._size
+        cx, cy, cz = p.x + off.x, p.y + off.y, p.z + off.z
+        hx, hy, hz = abs(size.x) * 0.5, abs(size.y) * 0.5, abs(size.z) * 0.5
+        hit = _ray_bounds(
+            origin_position, direction,
+            cx-hx, cy-hy, cz-hz, cx+hx, cy+hy, cz+hz, distance
+        )
+        if hit is not None and (best is None or hit[0] < best.distance):
+            best = RaycastHit(
+                obj, origin_position + direction * hit[0], hit[1], hit[0]
+            )
+
     if modes.developer:
-        end=best.point if best is not None else origin+direction*distance
-        engine._debug_raycast(origin,end,origin_owner)
+        end = best.point if best is not None else origin_position + direction * distance
+        engine._debug_raycast(origin_position, end, origin_owner)
     return best
 
 def boxcast(center,size,direction,distance=1,ignore=()):
