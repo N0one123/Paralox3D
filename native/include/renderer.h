@@ -5,7 +5,6 @@ public:
     virtual ~Renderer() = default;
     virtual bool create(int width, int height, const char* title) = 0;
     virtual bool begin_frame() = 0;
-    virtual void set_low_quality(bool enabled) = 0;
     virtual void draw_cube(float x,float y,float z,float sx,float sy,float sz,float pitch,float yaw,float roll,float r,float g,float b,float a,bool visible)=0;
     virtual void end_frame() = 0;
     virtual bool running() const = 0;
