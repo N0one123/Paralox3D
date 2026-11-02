@@ -69,12 +69,7 @@ def load():
 
     for path in candidates:
         if path.is_file():
-            library = _load_library(path)
-            # The low-quality renderer entry point is part of the current ABI.
-            # If a source checkout contains an older bundled DLL, skip it and
-            # let the normal source-build fallback refresh the native library.
-            if hasattr(library, "p3d_engine_set_low_quality"):
-                return library
+            return _load_library(path)
 
     # Source checkouts can build the native core on first use.
     try:
